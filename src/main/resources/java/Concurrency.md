@@ -127,6 +127,43 @@ synchronized加在方法上
 #### 轻量级锁cas自旋阶段有用到lock cmpxchg指令
 ### 锁升级
 ![synchronizedUpdate](../images/synchronizedUpdate.PNG)
+![monitor](../images/monitor.png)
+
+java对象头（64位机中）包括，类型（Klass）指针4B，markword 8B，实例数据（如果是引用那么存放的是oop普通对象指针，压缩前占8B，
+压缩后占4B，如果是基本类型数据...），对齐填充（保证被8整除）。其中markword如下：
+![markword](../images/markword.png)
+
+这个过程其实是可以类比自适应自旋的ReentrantLock的。
+
+线程A在进入同步区域前先获得锁，离开后释放锁，在这过程之中，如果有线程B来竞争锁，那么在下一个SafePoint（用户线程静止）的时候，
+如果此时线程A还没有释放锁，那么锁升级为轻量级锁（cas自旋）。
+
+重量级锁情况下：当多个线程同时访问一段同步代码时，首先会进入_EntryList队列中，当某个线程获取到对象的monitor后进入_Owner区域
+并把monitor中的_owner变量设置为当前线程，同时monitor中的计数器_count加1，若线程调用wait()方法，将释放当前持有的monitor，
+_owner变量恢复为null，_count自减1，同时该线程进入_WaitSet集合中等待被唤醒。若当前线程执行完毕也将释放monitor(锁)并复位变量的值，
+以便其他线程进入获取monitor(锁)。如下图所示
+![synchronizedHeavy](../images/synchronizedHeavy.png)
+### 其他的锁优化
+1. 自旋与自适应自旋：
+如果持有锁的线程能在很短时间内释放锁资源，就可以让线程执行一个忙循环（自旋），等持有锁的线程释放锁后即可立即获取锁，
+这样就避免用户线程和内核的切换的消耗。但是线程自旋需要消耗cpu的资源，如果一直得不到锁就会浪费cpu资源。
+因此在jdk1.6引入了自适应自旋锁，自旋等待的时候不固定，而是由前一次在同一个锁上的自旋时间及锁的拥有者的状态来决定。
+2. 锁消除:
+锁消除是指虚拟机即时编译器在运行时，对于一些代码上要求同步但是被检测不可能存在共享数据竞争的锁进行消除。例如String类型的连接操作，
+String是一个不可变对象，字符串的连接操作总是通过生成新的String对象来进行的，Javac编译器会对String连接做自动优化，
+在JDK1.5的版本中使用的是StringBuffer对象的append操作，StringBuffer的append方法是同步方法，
+这段代码在经过即时编译器编译之后就会忽略掉所有的同步直接执行。
+在JDK1.5之后是使用的StringBuilder对象的append操作来优化字符串连接的。
+3. 锁粗化:
+将多次连接在一起的加锁、解锁操作合并为一次，将多个连续的锁扩展成一个范围更大的锁。例如每次调用StringBuffer.append方法都需要加锁，
+如果虚拟机检测到有一系列的连续操作都是对同一个对象反复加锁和解锁，就会将其合并成一个更大范围的加锁和解锁操作，
+如for循环内的加锁操作将会合并加到for循环外。
+
+## hapens-before原则
+在不影响**单线程**执行的语义下，编译器，cpu会将指令优化、重排序。
+而不同线程之间的操作则是没有happens before关系的，除非有volatile或者synchronized等带有跨线程（跨cpu）happen before关系的操作。
+不同线程之间的非volatile、非synchronized操作直接要想有传递的happens before关系的话，
+中间就肯定得有能产生happens before关系的volatile或者synchronized操作。
 
 ## MESI
 ### 锁总线
@@ -172,3 +209,38 @@ invalidate自己对应的cacheline,再读取胜者修改后的值, 回到起点.
 对于我们的CAS操作来说, 其实锁并没有消失,只是转嫁到了ring bus的总线仲裁协议中. 
 而且大量的多核同时针对一个地址的CAS操作会引起反复的互相invalidate 同一cacheline, 造成pingpong效应, 同样会降低性能。
 当然如果真的有性能问题，我觉得这可能会在ns级别体现了,一般的应用程序中使用CAS应该不会引起性能问题。
+## 缓存行
+###伪共享
+cpu的缓存是以块为单位的，一块（一行）一般为64字节。
+
+```java
+public class FalseSharingWithPadding { 
+    public volatile long x; 
+    public volatile long y; 
+}
+```
+按照缓存一致性协议，假如线程1要不断地修改当中的x，线程2要不断地修改当中的y，那么很可能就会发生这样的情况，它们位于各自cpu中同一行，
+它们相互执行完都会让对方的缓存行失效，不断地从主存中从新加载。但其实，修改的变量并不相同（共享了这一缓存行，事实上并不需要，
+称此伪共享）。
+
+![cacheline-padding](../images/cacheline-padding.png)
+
+由此有了以下的解决方案：
+```java
+public class FalseSharingWithPadding { 
+//加64字节的对齐，使其尽量位于不同的缓存行
+    public volatile long x; 
+    public volatile long p2;   // padding 
+    public volatile long p3;   // padding 
+    public volatile long p4;   // padding 
+    public volatile long p5;   // padding 
+    public volatile long p6;   // padding 
+    public volatile long p7;   // padding 
+    public volatile long p8;   // padding 
+    public volatile long v1; 
+}
+```
+让x，y大概率地位于不同的缓存行（可能会有编译器的优化），它们向相互执行完不会让对方的缓存行失效。
+### 合并写技术 100x8不一定等于100x4x2
+意思是在一段循环中，合计要写入8字节，循环100次，可能分为两次循环执行效率更高，循环中写入4字节。
+因为cpu一般凑够4字节才会写回缓存，而前面凑够4字节后面的要等cpu写回缓存，后者不用等。
