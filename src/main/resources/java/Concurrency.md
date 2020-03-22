@@ -159,6 +159,29 @@ String是一个不可变对象，字符串的连接操作总是通过生成新�
 如果虚拟机检测到有一系列的连续操作都是对同一个对象反复加锁和解锁，就会将其合并成一个更大范围的加锁和解锁操作，
 如for循环内的加锁操作将会合并加到for循环外。
 
+## cas
+汇编指令lock cmpxchg，让比较并交换成一个原子操作。
+### Unsafe类
+### 原子变量与ABA问题
+```java
+public class CASAndABATest {
+
+    public static void main(String[] args) {
+        AtomicInteger i=new AtomicInteger(10);
+        i.compareAndSet(10,11);//ABA问题
+
+        //知道期间变化过，但不知道变化了多少次，其实是原子性地比较两个变量，比较值，比较版本
+        AtomicMarkableReference<Integer> mi=new AtomicMarkableReference<>(1,false);
+        mi.compareAndSet(1,2,false,true);
+
+        //知道期间变化了多少次
+        AtomicStampedReference<Integer> si=new AtomicStampedReference<>(3,0);
+        si.compareAndSet(3,4,0,1);
+    }
+}
+```
+## 组合应用
+一般组合使用方式为：volatile变量，原子变量，阻塞队列（并发队列），例如线程池。
 ## hapens-before原则
 在不影响**单线程**执行的语义下，编译器，cpu会将指令优化、重排序。
 而不同线程之间的操作则是没有happens before关系的，除非有volatile或者synchronized等带有跨线程（跨cpu）happen before关系的操作。

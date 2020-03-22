@@ -1,7 +1,10 @@
 # Concurrent容器
 并发容器或者锁都是基于AQS（AbstractQueuedSynchronizer）来实现的，
 如常用的ReentrantLock（Condition，Semaphore，ReentrantReadWriteLock）、
-CountDownLatch、CyclicBarrier、ArrayBlockingQueue、LinkedBlockingQueue、ConcurrentLinkedQueue、SynchronousQueue。
+CountDownLatch、CyclicBarrier、ArrayBlockingQueue、LinkedBlockingQueue、ConcurrentLinkedQueue、
+DelayQueue延时队列、SynchronousQueue同步队列（put时阻塞直至被消费）。
+
+用于并发的其实还有，ConcurrentHashMap，CopyOnWriteArrayList写时复制容器。
 ## AQS
 AQS也是基于cas,用到了模板方法的设计模式。内部维护一个双向链表，目的是为了double-check，当某一节点的field出现null时，
 可以从尾往前找。
