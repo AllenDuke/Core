@@ -45,3 +45,11 @@ MSL是Maximum Segment Lifetime英文的缩写，中文可以译为“报文最�
 ![flowControl2](../images/flowControl2.png)
 ## 拥塞控制
 ![congestionControl](../images/congestionControl.png)
+## syn洪泛攻击
+攻击者伪造大量ip，向被服务端发起连接(发送syn报文)，服务收到syn报文后，返回一个syn+ack报文，此时的连接状态位半连接，但由于攻击者的
+IP地址是伪造的，意味着服务端是收不到攻击者的ack报文，于是服务端认为超时，就重发，在重发一定次数后，才断开这个连接。如果收到大量的
+攻击，那么服务端被耗费大量资源无法对外服务。
+
+防范：降低SYN timeout时间，使得主机尽快释放半连接的占用；又比如采用SYN cookie设置，如果短时间内连续收到某个IP的重复SYN请求，
+则认为受到了该IP的攻击，丢弃来自该IP的后续请求报文
+# 网络七层模型

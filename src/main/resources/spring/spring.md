@@ -33,6 +33,52 @@
 对接口进行aop时，使用的是jdk动态代理。
 
 对类进行aop时，使用的是Aspectj，字节码编织技术。
+### 拦截示例
+```java
+@Aspect
+@Component
+public class ErrorHandlerAspect {
+
+    /**
+     * 设置拦截点为所有的Controller
+     */
+    @Pointcut("execution(* com.faishze.api.fasizheapi.controller.*.*.*(..))")
+    public void pointCut(){
+    }
+
+
+    /**
+     * 对返回结果的错误进行解析，只对返回为Result的进行解析
+     * 如果Result成功，就取出其中的数据，进行返回，如果不成
+     * 功，封装相对应的ResponseEntity
+     *
+     * @param joinPoint ProceedingJoinPoint
+     * @return Object
+     */
+    @Around(value = "pointCut()")
+    public Object handler(ProceedingJoinPoint joinPoint) throws Throwable {
+        Object ret = joinPoint.proceed();
+        if (!(ret instanceof Result)) {
+            return ret;
+        }
+
+        Result result = (Result) ret;
+        if (result.isSuccess()) {
+            return result.getData();
+        }
+
+        ErrorCode errorCode = result.getErrorCode();
+        String message = result.getMessage();
+        ErrorResponse errorResponse;
+        if (message == null) {
+            errorResponse = new ErrorResponse(errorCode.getError(), errorCode.getMessage());
+        } else {
+            errorResponse = new ErrorResponse(errorCode.getError(), message);
+        }
+        return new ResponseEntity<>(errorResponse, errorCode.getHttpStatus());
+    }
+}
+```
 ## 事务
 ### 隔离级别
 依靠mysql支持。

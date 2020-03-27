@@ -101,11 +101,10 @@ public class ConcurrentContainerTest {
 //        lock.readLock().lock();//在要去获得写锁时，要写释放已获得的读锁，否则死锁
 //        lock.writeLock().lock();
 
-        //当获得写锁后，其他线程不可读
-
 //        lock.writeLock().lock();//在已获得写锁时，可以继续去获得读锁
 //        lock.readLock().lock();
 
+        //当获得写锁后，其他线程不可读
         new Thread(()->{
             lock.writeLock().lock();
             System.out.println("写锁获得");
@@ -123,6 +122,26 @@ public class ConcurrentContainerTest {
             System.out.println("读锁获得");
             lock.readLock().unlock();
             System.out.println("读锁释放");
+        }).start();
+
+        //当获得读锁后，其他线程不可写
+        new Thread(()->{
+            lock.readLock().lock();
+            System.out.println("读锁获得");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("读锁释放");
+            lock.readLock().unlock();
+        }).start();
+        Thread.sleep(1000);//先让读锁获得
+        new Thread(()->{
+            lock.writeLock().lock();
+            System.out.println("写锁获得");
+            System.out.println("写锁释放");
+            lock.writeLock().unlock();
         }).start();
     }
 

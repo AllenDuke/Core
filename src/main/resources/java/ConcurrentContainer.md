@@ -107,7 +107,7 @@ ReentrantLock与synchornize关键字作用十分相似，差别在于，在会�
         }
     }
 ```
-### ReentrantReadWriteLock
+### ReentrantReadWriteLock 可由此联想到MySQL事务与锁的关系
 ```java
     public static void reentrantreadwritelock() throws InterruptedException {
         /**
@@ -121,11 +121,10 @@ ReentrantLock与synchornize关键字作用十分相似，差别在于，在会�
 //        lock.readLock().lock();//在要去获得写锁时，要写释放已获得的读锁，否则死锁
 //        lock.writeLock().lock();
 
-        //当获得写锁后，其他线程不可读
-
 //        lock.writeLock().lock();//在已获得写锁时，可以继续去获得读锁
 //        lock.readLock().lock();
 
+        //当获得写锁后，其他线程不可读（MySQL利用MVCC解决这个问题）
         new Thread(()->{
             lock.writeLock().lock();
             System.out.println("写锁获得");
@@ -144,12 +143,32 @@ ReentrantLock与synchornize关键字作用十分相似，差别在于，在会�
             lock.readLock().unlock();
             System.out.println("读锁释放");
         }).start();
+
+        //当获得读锁后，其他线程不可写（MVCC快照读不加锁）
+        new Thread(()->{
+            lock.readLock().lock();
+            System.out.println("读锁获得");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("读锁释放");
+            lock.readLock().unlock();
+        }).start();
+        Thread.sleep(1000);//先让读锁获得
+        new Thread(()->{
+            lock.writeLock().lock();
+            System.out.println("写锁获得");
+            System.out.println("写锁释放");
+            lock.writeLock().unlock();
+        }).start();
     }
 ```
 ### 并发队列
-1. ArrayBlockingQueue中生产者与消费者共用同一把锁，不能同时工作，阻塞。
-2. LinedBlockingQueue中生产者与消费者有各自的锁，可以同时工作，阻塞。
-3. ConcurrentLinkedQueue不阻塞。
+1. ArrayBlockingQueue中生产者与消费者共用同一把锁，不能同时工作，阻塞。内部使用一个ReentrantLock。
+2. LinedBlockingQueue中生产者与消费者有各自的锁，可以同时工作，阻塞。内部使用两个ReentrantLock。
+3. ConcurrentLinkedQueue不阻塞。利用cas自旋来设值。
 
 ![blockingqueue](../images/blockingqueue.PNG)
 
@@ -240,4 +259,91 @@ LockSupport.park()和unpark()和object.wait()和notify()很相似，那么它们
 3. 如果队列已满，但还没达最大线程数，那么新建线程来处理。
 4. 如果已达最大线程数，那么执行拒绝策略（默认为抛弃任务，抛出异常）。
 5. 非核心线程空闲一定时间后消亡。
+## ConcurrentHashMap
+### 源码分析
+putVal方法
+```java
+final V putVal(K key, V value, boolean onlyIfAbsent) {
+        if (key == null || value == null) throw new NullPointerException();
+        int hash = spread(key.hashCode());
+        int binCount = 0;
+        for (Node<K,V>[] tab = table;;) {//注意这里是循环
+            Node<K,V> f; int n, i, fh;
+            if (tab == null || (n = tab.length) == 0)//如果还没初始化
+                tab = initTable();//初始化
+            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {//如果对应下标为null
+                if (casTabAt(tab, i, null,
+                             new Node<K,V>(hash, key, value, null)))//直接cas放置
+                    break;                   // no lock when adding to empty bin
+            }
+            else if ((fh = f.hash) == MOVED)//如果发现正在扩容
+                tab = helpTransfer(tab, f);//帮助扩容，扩容后进入下一个循环再来判断
+            else {//找到了对应桶
+                V oldVal = null;
+                synchronized (f) {//这里锁住了对应的桶，所以下面的赋值不用cas
+                    if (tabAt(tab, i) == f) {
+                        if (fh >= 0) {
+                            binCount = 1;
+                            for (Node<K,V> e = f;; ++binCount) {//循环找到链表末尾
+                                K ek;
+                                if (e.hash == hash &&
+                                    ((ek = e.key) == key ||
+                                     (ek != null && key.equals(ek)))) {
+                                    oldVal = e.val;
+                                    if (!onlyIfAbsent)
+                                        e.val = value;
+                                    break;
+                                }
+                                Node<K,V> pred = e;
+                                if ((e = e.next) == null) {
+                                    pred.next = new Node<K,V>(hash, key,
+                                                              value, null);
+                                    break;
+                                }
+                            }
+                        }
+                        else if (f instanceof TreeBin) {
+                            Node<K,V> p;
+                            binCount = 2;
+                            if ((p = ((TreeBin<K,V>)f).putTreeVal(hash, key,
+                                                           value)) != null) {
+                                oldVal = p.val;
+                                if (!onlyIfAbsent)
+                                    p.val = value;
+                            }
+                        }
+                    }
+                }
+                if (binCount != 0) {
+                    if (binCount >= TREEIFY_THRESHOLD)
+                        treeifyBin(tab, i);
+                    if (oldVal != null)
+                        return oldVal;
+                    break;
+                }
+            }
+        }
+        addCount(1L, binCount);
+        return null;
+    }
+```
+## CopyOnWriteArrayList
+### 源码分析
+add方法
+```java
+    public boolean add(E e) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();//修改时加锁
+        try {
+            Object[] elements = getArray();
+            int len = elements.length;
+            Object[] newElements = Arrays.copyOf(elements, len + 1);//复制
+            newElements[len] = e;
+            setArray(newElements);//修改引用关系
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+```
 
