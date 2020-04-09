@@ -327,6 +327,32 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
         return null;
     }
 ```
+get方法
+```java
+    public V get(Object key) {
+        Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
+        int h = spread(key.hashCode());
+        if ((tab = table) != null && (n = tab.length) > 0 &&
+            (e = tabAt(tab, (n - 1) & h)) != null) {
+            if ((eh = e.hash) == h) {
+                if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                    return e.val;
+            }
+        //hash值为负值表示正在扩容，这个时候查的是ForwardingNode的find方法来定位到nextTable来
+        //eh=-1，说明该节点是一个ForwardingNode，正在迁移，此时调用ForwardingNode的find方法去nextTable里找。
+        //eh=-2，说明该节点是一个TreeBin，此时调用TreeBin的find方法遍历红黑树，由于红黑树有可能正在旋转变色，所以find里会有读写锁。
+        //eh>=0，说明该节点下挂的是一个链表，直接遍历该链表即可。
+            else if (eh < 0)
+                return (p = e.find(h, key)) != null ? p.val : null;
+            while ((e = e.next) != null) {
+                if (e.hash == h &&
+                    ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                    return e.val;
+            }
+        }
+        return null;
+    }
+```
 ## CopyOnWriteArrayList
 ### 源码分析
 add方法
@@ -344,6 +370,22 @@ add方法
         } finally {
             lock.unlock();
         }
+    }
+```
+get方法，有可能拿到旧数据
+```java
+    public E get(int index) {
+        return get(getArray(), index);
+    }
+
+    private transient volatile Object[] array;
+
+    final Object[] getArray() {
+        return array;
+    }
+
+    private E get(Object[] a, int index) {
+        return (E) a[index];
     }
 ```
 

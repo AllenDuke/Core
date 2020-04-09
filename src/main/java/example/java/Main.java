@@ -1,38 +1,52 @@
 package example.java;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        int n=scanner.nextInt();
-        int[] num=new int[n];
-        for (int i = 0; i < n; i++) {
-            num[i]=scanner.nextInt();
-        }
-        trace(num,new ArrayList<Integer>(),-1);
-        System.out.println((sum-1)%998244353);
-    }
-
-    static long sum=0;
-    public static void trace(int[] num, List<Integer> list, int r){
-        boolean isFun=true;
-        for(int i=1;i<=list.size();i++){
-            if(list.get(i-1)%i!=0) {
-                isFun=false;
-                break;
+        Scanner in = new Scanner(System.in);
+        int t = in.nextInt();
+        for (int i = 0; i < t; i++) {
+            String s=in.next();
+            for (int j = 0; j < s.length(); j++) {
+                int index=s.charAt(j)-'a';
+                count[index]++;
             }
+            resolve(s,0);
         }
-        if(isFun) sum++;
-        for (int i = r+1; i < num.length; i++) {
-            list.add(num[i]);
-            trace(num,list,i);
-            list.remove(list.size()-1);
-        }
+
     }
 
+    public static void resolve(String s,int cur){
+        boolean isHui=isHui();
+        if(isHui&&cur==0) System.out.println("Cassidy");
+        else if(isHui&&cur==1) System.out.println("Eleanore");
+        else{
+            while(!isHui){
+                count[del]--;
+                if(cur==0) cur=1;
+                else cur=0;
+                isHui=isHui();
+            }
+            if(cur==0) System.out.println("Cassidy");
+            else System.out.println("Eleanore");
+        }
+
+    }
+
+    static int[] count=new int[26];
+    static int del=0;
+
+    public static boolean isHui(){
+        int oddNum=0;
+        for(int i=0;i<26;i++){
+            if(count[i]<1) continue;
+            if((count[i]&1)==1) oddNum++;
+            else del=i;
+        }
+        if(oddNum>1) return false;
+        else return true;
+    }
 }
 

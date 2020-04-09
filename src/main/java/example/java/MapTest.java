@@ -1,8 +1,6 @@
 package example.java;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * @author 杜科
@@ -13,6 +11,7 @@ import java.util.TreeMap;
 public class MapTest {
 
     public static void main(String[] args) {
+
         Map<Character, Integer> lruTest = new LruTest(16,0.75f,true);
         String s = "abcdefghijkl";
         for (int i = 0; i < s.length(); i++) {

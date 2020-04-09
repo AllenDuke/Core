@@ -31,5 +31,17 @@ public class CollectionTest {
         list.remove(Integer.valueOf(2));//for循环遍历，判断equals
 
         Vector vector;
+
+        /**
+         * 二叉堆形式。
+         * 无序数组中取第k大，可以创一个大小为k的小顶堆，经堆排序后，堆顶即为第k大，也可利用快排思想
+         */
+        PriorityQueue<Integer> queue = new PriorityQueue<>();//小顶堆
+        queue.add(3);
+        queue.add(5);
+        queue.add(1);
+        queue.add(2);
+        System.out.println(queue.poll());
+        System.out.println(queue.poll());
     }
 }
