@@ -1,7 +1,6 @@
 package example.java;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author 杜科

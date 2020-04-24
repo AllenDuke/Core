@@ -10,8 +10,21 @@ public class SynchronizedTest {
 
     public static void main(String[] args) {
         SynchronizedTest o=new SynchronizedTest();
-        synchronized (o){}
-//        synchronized (SynchronizedTest.class){}
+        int a=0;
+        try {
+            synchronized (o){
+                a=1;
+                /**
+                 * 异常前的指令已经执行
+                 */
+                int i=a/0;
+                a=2;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println(a);
+        }
+
 
     }
 

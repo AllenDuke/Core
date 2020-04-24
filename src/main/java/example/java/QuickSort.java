@@ -8,6 +8,12 @@ package example.java;
  */
 public class QuickSort {
 
+    /*
+    快速排序的不稳定性
+    5 | 3 1 2 | 9 7 8 9 | 4 6
+    4与第一个9交换了位置
+     */
+
     public static void sort(int[] a){
         sort(a,0,a.length-1);
     }

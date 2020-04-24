@@ -4,6 +4,7 @@
 
 也就是这几个常用的map，分别是LindedHashMap, HashMap, TreeMap, Hashtable。
 ## LindedHashMap 继承自HashMap
+支持范围查找（双向链表结构）。
 ### 用法
 ```java
     public static void main(String[] args) {
@@ -266,6 +267,7 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
 ## Hashtable
 其实就是方法加了synchronized的HashMap，一般不用了，因为有更好的并发容器ConcurrentHashMap。
 ## TreeMap 数据结构为红黑树
+支持排序（红黑树结构）
 ### 用法
 ```java
     public static void main(String[] args) {
@@ -307,6 +309,8 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
     }
 ```
 当不便修改Student类时（即实现Comparable接口，重写compareTo方法），可使用比较器的方式。
+## B+ Tree mysql索引数据结构
+支持排序和范围查找。
 # Set
 HashSet, LinkedHashSet, TreeSet其实就是Map，只是把值指向了一个标志。
 ## HashSet

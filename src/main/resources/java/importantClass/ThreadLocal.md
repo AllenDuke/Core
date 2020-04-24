@@ -15,6 +15,7 @@ public void set(T value) {
         createMap(t, value);
 }
 
+//get去线性查找的时候会清除遇到的为null的key
 public T get() {
     Thread t = Thread.currentThread();
     ThreadLocalMap map = getMap(t);
@@ -87,7 +88,7 @@ key被保存到了WeakReference对象中，这就导致了一个问题，ThreadL
 但是作为弱引用的key却被回收了，现在key=null。那么GC完毕后，再也不能用这个key去把value查出来，
 但是Entry与value这种强引用关系还存在着，那么这块内存就再也回收不了。
 
-![ThreadLocal](../images/ThreadLocal.png)
+![ThreadLocal](../../images/ThreadLocal.png)
 
 线程类的成员变量threadLocals强引用着ThreadLocalMap，ThreadLocalMap强引用着Entry数组，而Entry弱引用着ThreadLocal。
 gc时会回收弱引用。

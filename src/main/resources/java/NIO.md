@@ -10,6 +10,9 @@
         boolean pa = VM.isDirectMemoryPageAligned();
         int ps = Bits.pageSize();
         long size = Math.max(1L, (long)cap + (pa ? ps : 0));
+        //空间不足时，会进行一定次数的System.gc()，目的是为了释放此前的已成为垃圾的堆外内存，
+        //它会中断进程100ms,如果在这100ms的之间，系统未完成GC，仍会抛出OOM。
+        //JVM启动参数DisableExplicitGC会使System.gc()无效。
         Bits.reserveMemory(size, cap);
 
         long base = 0;
@@ -84,7 +87,7 @@ public class Cleaner extends PhantomReference<Object> {
 // 的DirectBuffer已经不被任何对象引用了(也就是经过可达性分析判定为不可达的时候)。此时Cleaner对象会被JVM挂到PendingList上。
 // 然后有一个固定的线程扫描这个List，如果遇到Cleaner对象，那么就执行clean方法。
     public void clean() {
-        if (remove(this)) {
+        if (remove(this)) {//从双向链表中移除
             try {
                 this.thunk.run();//释放堆外内存
             } catch (final Throwable var2) {
@@ -103,6 +106,30 @@ public class Cleaner extends PhantomReference<Object> {
         }
     }
 }
+```
+应用与回收
+```java
+  public static void clean(final ByteBuffer byteBuffer) { 
+    if (byteBuffer.isDirect()) { 
+      ((DirectBuffer)byteBuffer).cleaner().clean(); //释放堆外内存
+    } 
+ } 
+  public static void sleep(long i) { 
+    try { 
+       Thread.sleep(i); 
+     }catch(Exception e) { 
+       /*skip*/
+     } 
+  } 
+  public static void main(String []args) throws Exception { 
+      ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024 * 200); 
+      System.out.println("start"); 
+      sleep(5000); 
+      clean(buffer);//执行垃圾回收
+//     System.gc();//执行Full gc进行垃圾回收
+      System.out.println("end"); 
+      sleep(5000); 
+  }
 ```
 ## Selector
 1. select()阻塞或者超时等待，对应epoll_wait

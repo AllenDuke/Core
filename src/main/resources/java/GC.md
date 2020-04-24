@@ -81,13 +81,16 @@ TLAB(Thread Local Alloc Buffer)线程本地分配缓冲区，我们知道线程�
 ### 对象内存分配过程
 ![g1allocate](../images/g1allocate.PNG)
 
-栈上分配依靠逃逸分析，如果一个对象不会在方法内逃逸（不会共享），那么对象会被打散成基本的数据然后在栈上分配空间。
+![new](../images/new.PNG)
+
+栈上分配依靠逃逸分析(默认开启)，如果一个对象不会在方法内逃逸（不会共享），那么对象会被打散成基本的数据然后在栈上分配空间。
 ### 栈上分配事例
 ```java
 /**
  * @author 杜科
  * @description 测试栈上分配
  * -server -Xmx15m -Xms15m -XX:+DoEscapeAnalysis -XX:+PrintGC -XX:-UseTLAB -XX:+EliminateAllocations
+ * -Xmx15m -Xms15m 限定最大最小，防止分配堆内存时跳动
  * DoEscapeAnalysis 逃逸分析
  * EliminateAllocations 标量替换
  * 不开启的话将发生大量GC
