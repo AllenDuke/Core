@@ -45,7 +45,7 @@
         return buf;
     }
 ```
-请求ByteBuf，Handler继承SimpleChannelInboundHandler可释放；
+请求PooledUnsafeDirectByteBuf，Handler继承SimpleChannelInboundHandler可释放；
 ```java
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -90,3 +90,8 @@ fireChannelRead()，由TailContext释放。
     }
 ```
 那么应该时刻记着由最后一个使用的人释放（ReferenceCountUtil.release(byteBuf)）。
+
+内存泄漏原因：请求ByteBuf使用的是PooledUnsafeDirectByteBuf，这是池化的(虽然用户已经不再持有引用，即对用户来说这个已经成为了垃圾，
+但池化后，netty内存池持有这个ByteBuf的引用，并没有成为真正的垃圾，除非我们通过某种方式进行ReferenceCountUtil.release),
+若是非池化的DirectByteBuf，在申请新的DirectByteBuffer的时候，如果申请失败(堆存或者直接内存不足)会进行一次垃圾回收(System.gc)，
+于是真正的垃圾得到清理，不会造成OOM，但这池化了，并没有成为真正的垃圾。内存池分配细节？会膨胀？

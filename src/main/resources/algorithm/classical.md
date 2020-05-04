@@ -5,6 +5,8 @@
 ![shortestPath-dijkstra1](../images/shortestPath-dijkstra1.PNG)
 1. (v0,v1,1), (v0,v2,5), (v0,...,~)  ~意为无穷大
 2. (v1,v2,1+3<5,更新到v2的路径)...
+
+缺点：单源，路径非负。
 #### Floyd算法 多源最短路径（可求任意两点之间的最短路径）做题时建议使用此算法
 从任意节点i到任意节点j的最短路径不外乎2种可能：
 1) 直接从节点i到节点j。
@@ -34,3 +36,14 @@ for (int k = 1; k <= vexCount; k++) { //并入中转节点1,2,...vexCount，把k
 ![smallTree-kruskal](../images/smallestTree-kruskal.PNG)
 #### Prim算法 关注点
 ![smallTree-prim](../images/smallestTree-prim.PNG)
+## 字符串
+### KMP算法
+kmp算法是字符串模式匹配算法，用于寻找子串在父串中出现的位置。
+####暴力搜索
+每当失配，父串左移一个单位重新配对，然而，我们应该利用失配的左段是匹配的，这一部分等于子串的一部分。
+#### 最长公共前后缀
+现在只关注子串中匹配的一部分，若父串左移一个单位后，剩下的仍匹配，则说明匹配的这一部分为最长公共前后缀。
+所以我们可以先计算出子串的每一个位置的最长公共前后缀，用作每当失配的时候可以定位父串应该左移多少个单位（也就是子串中j指针应该
+回溯多少个单位），继续往后匹配。
+
+例如对于字符串 abacaba，其前缀有 a, ab, aba, abac, abacab，后缀有bacaba, acaba, caba, aba, ba, a。最长公共前后缀就是 aba。

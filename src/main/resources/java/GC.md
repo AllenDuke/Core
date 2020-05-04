@@ -33,14 +33,14 @@ G1 GC提出了不确定性Region，每个空闲 Region 不是为某个固定年�
 这表示这些Region存储的是巨型对象（humongous object，H-obj），当新建对象大小超过Region大小一半时，
 直接在新的一个或多个连续Region中分配，并标记为H。
 ### gc模式
-#### 标记周期
+#### 周期
 1. initial mark: 初始标记过程，STW，标记了从GC Root可达的对象
 2. concurrent marking: 并发标记过程，整个过程gc collector线程与应用线程可以并行执行，标记出GC Root可达对象衍生出去的存活对象，
 并收集各个Region的存活对象信息
 3. remark: 最终标记过程，整个过程STW，标记出那些在并发标记过程中遗漏的，或者内部引用发生变化的对象
 4. clean up: 垃圾清除过程，STW，如果发现一个Region中没有存活对象，则把该Region加入到空闲列表中。
    * cms中为并发清理，因而会有浮动垃圾的问题。
-5. 注意：这个时候才开始young gc去复制存活对象或者出发mix gc。
+5. 注意：这个时候才开始young gc去复制存活对象或者触发mixed gc。
 #### young gc 标记——复制
 发生在年轻代的GC算法，一般对象（除了巨型对象）都是在eden region中分配内存，当所有eden region被耗尽无法申请内存时，
 就会触发一次young gc，这种触发机制和之前的young gc差不多，执行完一次young gc，

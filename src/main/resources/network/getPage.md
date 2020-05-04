@@ -3,7 +3,7 @@
 - 域名解析：浏览器会将当前输入的URL发送至DNS服务器并获得域名对应的WEB服务器的ip地址，过程如下：
 1. chrome搜索自身的DNS缓存（有没有以及有没有过期），查看chrome自身的缓存：chrome://net-internals/#dns
 2. chrome浏览器没有找到自身缓存或者缓存已经失效，就会搜索操作系统自身的DNS缓存（有没有以及有没有过期）
-3. 操作系统自身的DNS缓存没有找到或者已经失效，chrome会读取本地的HOST文件
+3. 操作系统自身的DNS缓存(ipconfig /displaydns可查看)没有找到或者已经失效，chrome会读取本地的HOST文件
 4. 本地HOST文件的缓存没有找到或者已经失效，chrome会发起一个DNS的一个系统调用，即chrome以系统的名义向本地宽带运营商的 dns服务器
 发起一个域名解析的请求，过程如下：
    1. 宽带运营商服务器查看本身缓存
@@ -21,7 +21,7 @@ tomcat方面:
 容器提供宿主环境；
 - 读取web.xml
 服务器软件或容器如（tomcat）加载项目中的web.xml文件，通过其中的各种配置来启动项目，只有其中配置的各项均无误时，项目才能正确启动。
-web.xml	有多项标签，在其加载的过程中顺序依次为：context-param >> listener >> fileter >> servlet​。（同类多个节点以出现顺序
+web.xml	有多项标签，在其加载的过程中顺序依次为：context-param >> listener >> filter >> servlet​。（同类多个节点以出现顺序
 依次加载）因为用的是springmvc，所以只有一个映射路径为"/"的DispatchServlet。
 1. Web客户向Servlet容器（Tomcat）发出Http请求
 2. Servlet容器分析客户的请求信息

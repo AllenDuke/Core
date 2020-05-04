@@ -5,7 +5,7 @@ rocketmq中的broker是做数据存储的，利用的是文件系统，这要比
 ![rocketmq-architectture](../images/rocketmq-architecture.PNG)
 ![rocketmq-architectture1](../images/rocketmq-architecture1.PNG)
 
-NameServer作为注册中心，同时记录如每个Broker都有哪些Producer和Consumer连接等信息。
+NameServer(相互之间不交互信息)作为注册中心，同时记录如每个Broker都有哪些Producer和Consumer连接等信息。
 ## 有序消息
 1. 全局有序，所有消息发送到同一个队列。
 2. 分区有序，利用一致性hash，使得模值相同的消息发送到同一个队列。

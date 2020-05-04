@@ -45,8 +45,75 @@ statement会产生sql注入，形如：selectByStatement("aa","1 or 1=1");
 通过使用asm字节码工具的springmvc能从class文件方法局部变量表中拿到参数的名字，而mybatis只能用注解（或顺序）标明。
 
 jdk1.8后，加参数-parameters进行编译，就保留了。
-## jdk动态代理
-### 被代理人
+## 使用方式
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.faishze.api.fasizheapi.dao.ArticleCollectionMapper">
+    <resultMap id="BaseResultMap" type="com.faishze.api.fasizheapi.pojo.do0.ArticleCollection">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+    </resultMap>
+
+<!--    ArticleCollectionEntity映射-->
+    <resultMap id="ArticleCollectionEntityMap"
+               type="com.faishze.api.fasizheapi.pojo.do0.entity.AritcleCollectionEntity">
+        <id column="cid" jdbcType="INTEGER" property="id" />
+        <result column="cuserid" jdbcType="INTEGER" property="userId"/>
+        <result column="collected_time" jdbcType="TIMESTAMP" property="collectedTime" />
+<!--一对一关系-->
+        <association property="article" javaType="com.faishze.api.fasizheapi.pojo.do0.Article">
+            <id column="id" jdbcType="INTEGER" property="id" />
+        </association>
+    </resultMap>
+    <delete id="deleteArticleCollection" parameterType="java.lang.Long">
+    delete from t_article_collection
+    where id = #{id,jdbcType=BIGINT}
+    </delete>
+    <insert id="saveArticleCollection" parameterType="com.faishze.api.fasizheapi.pojo.do0.ArticleCollection">
+        <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into t_article_collection (user_id, article_id
+        )
+        values (#{userId,jdbcType=INTEGER}, #{articleId,jdbcType=INTEGER}
+        )
+    </insert>
+    <update id="updatetArticleCollection" parameterType="com.faishze.api.fasizheapi.pojo.do0.ArticleCollection">
+    update t_article_collection
+    set user_id = #{userId,jdbcType=INTEGER},
+      article_id = #{articleId,jdbcType=INTEGER},
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <select id="listArticlesByQuery" parameterType="com.faishze.api.fasizheapi.query.ArticleQuery" 
+resultMap="BaseResultMap">
+        select id, user_id, user_nick_name, title, `type`, like_num, collection_num, view_num, comment_num,
+        available, create_time, update_time, content
+        from t_article
+<!--动态sql语句-->
+        <where>
+            <if test="available != null">
+                available = #{available}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+          <if test="userNickName != null">
+            AND user_nick_name = #{userNickName}
+          </if>
+            <if test="type != null">
+                AND type = #{type}
+            </if>
+        </where>
+        <if test="orderField != null">
+<!--$的正确用法-->
+            order by ${orderField} ${orderType}
+        </if>
+      </select>
+</mapper>
+```
+# jdk动态代理
+## 被代理人
 ```java
 public class Subject implements Sayable{
 
@@ -56,13 +123,13 @@ public class Subject implements Sayable{
     
 }
 ``` 
-### 接口
+## 接口
 ```java
 public interface Sayable {
     void say();
 }
 ```
-### 调用处理器
+## 调用处理器
 ```java
 public class MyInvokeHandler implements InvocationHandler {
 
@@ -93,7 +160,7 @@ public class MyInvokeHandler implements InvocationHandler {
     }
 }
 ```
-### 生成的代理类
+## 生成的代理类
 ```java
 public final class $Proxy0 extends Proxy implements Sayable {
     private static Method m1;

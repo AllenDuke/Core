@@ -30,7 +30,20 @@
         list.remove(Integer.valueOf(2));//for循环遍历，判断equals
 ```
 ### Vector
-其实就是方法加了synchronized的ArrayList。
+其实就是方法加了synchronized的ArrayList，注意Vector的扩容与ArrayList不同。
+```java
+    private void grow(int minCapacity) {
+        // overflow-conscious code
+        int oldCapacity = elementData.length;
+        int newCapacity = oldCapacity + ((capacityIncrement > 0) ?//如果构造时设定的增量为0，那么两倍扩容。
+                                         capacityIncrement : oldCapacity);
+        if (newCapacity - minCapacity < 0)
+            newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE > 0)
+            newCapacity = hugeCapacity(minCapacity);
+        elementData = Arrays.copyOf(elementData, newCapacity);
+    }
+```
 ## ArrayList源码分析
 ### 实际存储的数组
 ```java

@@ -34,7 +34,33 @@ ThreadLocalMap getMap(Thread t) {
     return t.threadLocals;
 }
 ```
+### key的hash值从同一个hash函数获得
+```java
+    private final int threadLocalHashCode = nextHashCode();
+
+    /**
+     * The next hash code to be given out. Updated atomically. Starts at
+     * zero.
+     */
+    private static AtomicInteger nextHashCode =
+        new AtomicInteger();
+
+    /**
+     * The difference between successively generated hash codes - turns
+     * implicit sequential thread-local IDs into near-optimally spread
+     * multiplicative hash values for power-of-two-sized tables.
+     */
+    private static final int HASH_INCREMENT = 0x61c88647;//（斐波那契散列乘数，通过该数散列出来的结果会比较均匀）
+
+    /**
+     * Returns the next hash code.
+     */
+    private static int nextHashCode() {
+        return nextHashCode.getAndAdd(HASH_INCREMENT);
+    }
+```
 ## ThreadLocalMap
+为什么不用HashMap？key要继承弱引用，get,put有清理功能。
 ### 线程的实例数据
 位于线程类中
 ```java
@@ -102,6 +128,8 @@ try {
     localName.remove();//使用完及时删除
 }
 ```
+### 扩容，初始容量16，2的指数
+在扩容前，先把过期清理，如果仍然达到阈值75%，那么进行扩容。
 ## ThreadLocal在Spring事务管理中的应用
 spring中使用ThreadLocal来设计TransactionSynchronizationManager类，实现了事务管理与数据访问服务的解耦，
 同时也保证了多线程环境下connection的线程安全问题。

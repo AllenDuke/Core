@@ -1,4 +1,4 @@
-package example.java.nettyMemortLeakTest;
+package example.java.nettyMemoryLeakTest;
 
 
 import io.netty.bootstrap.ServerBootstrap;
