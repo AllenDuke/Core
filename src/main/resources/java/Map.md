@@ -3,7 +3,7 @@
 ![map](../images/MapUML.PNG)
 
 也就是这几个常用的map，分别是LindedHashMap, HashMap, TreeMap, Hashtable。
-## LindedHashMap 继承自HashMap
+## LindedHashMap 继承自HashMap（允许null键null值）
 支持范围查找（双向链表结构）。
 ### 用法
 ```java
@@ -264,7 +264,7 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
 ![hashmap1.7-loop](../images/hashmap1.7-loop.PNG)
 
 可结合HashMap1.7扩容的源码进行分析。
-## Hashtable
+## Hashtable 不允许null键null值
 其实就是方法加了synchronized的HashMap，一般不用了，因为有更好的并发容器ConcurrentHashMap。
 ## TreeMap 数据结构为红黑树
 支持排序（红黑树结构）

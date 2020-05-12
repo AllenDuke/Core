@@ -130,7 +130,8 @@ InnoDB的MVCC,是通过在每行记录后面保存两个隐藏的列来实现的
 
 总的来说，在事务隔离级别为RR下，当前事务不读取 后来事务或者正在发生的事务（即使这些正在发生的事务id较小且提交了，当前事务也不读取，
 因为RR下的快照在第一次select时生成，且只生成一次） 新增或修改的数据（读取之前已经完成的或者是自己修改的），
-不理会是否被后来事务删除（被后来的事务删除了照样读取）。
+不理会是否被后来事务删除（被后来的事务删除了照样读取）。快照创建前，后来事务如果已经提交，那么当前事务在创建快照时，可见到后来事务的
+操作结果。
 ### 事务与锁
 事务在执行到要加锁的语句时开始加锁，commit后释放锁。此时遵循两段锁协议：
 1. 加锁阶段：在该阶段可以进行加锁操作。在对任何数据进行读操作之前要申请并获得S锁（共享锁，其它事务可以继续加共享锁，
@@ -195,6 +196,15 @@ MySQL5.6开始主从复制有两种方式：基于日志（binlog）、基于GTI
    * [root@DB02 ~]# grep log_bin /etc/my.cnf log_bin = /application/mysql/logs/dadong-bin
    * [root@DB02 ~]# 提示：也可以按“log_bin = /application/mysql/logs/dadong-bin”命名，目录要存在。
    为什么要刷新binlog?找到全备数据和binlog文件的恢复临界点.
+   
+#### binlog与redo log
+因为MySQL早期版本中没有InnoDB引擎，MySQL自带的引擎是MyISAM，MyISAM是没有crash-safe能力的，直到将InnoDB以插件的形式引入，
+InnoDB使用Redo Log来实现crash-safe能力。
+
+区别：
+1. redo log是在InnoDB存储引擎层产生，而binlog是MySQL数据库的上层产生的，并且二进制日志不仅仅针对INNODB存储引擎，
+MySQL数据库中的任何存储引擎对于数据库的更改都会产生二进制日志。
+2. 两种日志记录的内容形式不同。MySQL的binlog是逻辑日志，其记录是对应的SQL语句。而innodb存储引擎层面的重做日志是物理日志。
 ### checkpoint
 checkpoint是为了定期将db buffer的内容刷新到data file。当遇到内存不足、db buffer已满等情况时，
 需要将db buffer中的内容/部分内容（特别是脏数据）转储到data file中。在转储时，会记录checkpoint发生的”时刻“。

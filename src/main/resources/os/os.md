@@ -1,4 +1,57 @@
 # OS
+## 操作系统的故事（32位机）
+### 图灵机与通用图灵机（冯诺依曼结构）
+![os-turing&commonTuring](../images/os-turing&commonTuring.PNG)
+### 操作系统的历史
+1. 批处理系统
+2. 多道程序系统
+3. 分时系统（unix)
+### 按下电源键第一件事
+加载固定引导扇区里的内容，这内容（汇编代码）与启用进入操作系统相关。（可以联想模拟文件系统加载第一个块）
+### 从x86 16位实模式切换到32位保护模式
+### 从汇编进入linux main函数（初始化，不会结束）
+c代码最后也是编译成汇编的。
+
+![os-linux-main](../images/os-linux-main.PNG)
+![os-linux-main-init](../images/os-linux-main-init.PNG)
+```java
+#include <unistd.h>
+#include <stdio.h> 
+int main () 
+{ 
+	pid_t fpid; //fpid表示fork函数返回的值
+	int count=0;
+	fpid=fork(); 
+	if (fpid < 0) 
+		printf("error in fork!"); 
+	else if (fpid == 0) {
+		printf("i am the child process, my process id is %d/n",getpid()); 
+		printf("我是爹的儿子/n");//对某些人来说中文看着更直白。
+		count++;
+	}
+	else {
+		printf("i am the parent process, my process id is %d/n",getpid()); 
+		printf("我是孩子他爹/n");
+		count++;
+	}
+	printf("统计结果是: %d/n",count);
+	return 0;
+}
+```
+运行结果是：
+
+    i am the child process, my process id is 5574
+    我是爹的儿子
+    统计结果是: 1
+    i am the parent process, my process id is 5573
+    我是孩子他爹
+    统计结果是: 1
+    
+对于父进程，返回子进程id，对于子进程返回0；
+
+子进程执行fork之后的代码，所以在shell中每一条命令都是新建子进程来执行的。
+### 进入shell
+### 
 ## Linux进程与线程 协程
 在Linux中线程其实就是共享某些资源的进程（并没有为线程设计单独的数据结构，Linux进程本身也是轻量级的），在创建线程的时候，
 其实是创建了进程并指定了它的共享资源。
@@ -30,6 +83,9 @@ pp要在自己的子进程中（即p所在的线程组中）为p的子进程（c
 进程用户态的时候，是不能后访问内核代码的，进程有4G的地址空间，在用户态是只能访问低3G的地址空间，而最后1G的空间是所有进程共享的，
 内核态4G的地址空间都能访问。
 
+![os-addrSpace](../images/os-addrSpace.PNG)
+![os-addrSpace](../images/os-addrSpace-0~2.PNG)
+
 线程在发生中断的时候，如软中断-系统调用，会从用户态转为内核态，此时用户栈会保存用户代码的上下文，内核代码将在内核栈中执行，
 此时若发生进程调度，内核栈将保存此时的内核代码的上下文。
 ## 进程
@@ -38,8 +94,10 @@ pp要在自己的子进程中（即p所在的线程组中）为p的子进程（c
 ### 进程处理
 ![os-processProcedure](../images/os-processProcedure.PNG)
 ### 上下文切换时机
+在涉及进程同步的问题时，切换时机要遵循某种规则。
+
 1. 中断。
-   * 时钟中断。
+   * 时钟中断（计组，取指，执行，检查中断）。(与时间片轮转有关)
    * IO中断。
    * 缺页中断。
 2. 陷阱。
