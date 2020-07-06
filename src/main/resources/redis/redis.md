@@ -59,13 +59,10 @@ Redis Cluster 把所有的数据划分为16384个不同的槽位，可以根据�
    否则返回让客户端重定向到新的实例。客户端先向新的机器发起ask指令，新实例返回成功后，再一次查询最终的结果。
 ## 线程模型
 ![redis-reactor](../images/redis-reactor.PNG)
+![redis-main](../images/redis-main.png)
 
-单线程是指：
-1. 网络io是单线程的，该线程把命令放到队列里。
-2. 事件的处理是单线程的，该线程去消费队列。(4.0后支持新建线程来执行删除命令)
-3. 单线程只是针对redis中的模块来说 比如 接受请求和响应是单线程，处理事件也是单线程。但是线程不是同一个，运行时不止一个线程。
-
-io线程中的epoll_wait采用的非阻塞的调用，因为还要去处理别的事情，而nginx的io线程就负责accept，所以采用阻塞式调用，
+redis整个流程和netty EventLoop是很相像的，epoll_wait要照顾定时任务，如果这一次没能把数据写到socket缓冲区里去的话（缓冲区已满），
+那么就注册写事件，在下一次epoll_wait的时候去处理。，而nginx的io线程就负责accept，所以采用阻塞式调用，
 而netty中采用超时select，因为要处理定时任务如心跳。
 ## 分布式锁
 ### 单实例下（一主多从）
@@ -93,7 +90,26 @@ redisson很好了封装了上面这把锁，使其适用于多种复杂的情况
 ![redission](../images/redission.PNG)
 
 redission的核心为：每隔一段时间若client仍持有锁为其续命、延长超时时间。
-### 多实例下（Cluster模式下） RedLock
+### 多实例下 RedLock
+要解决的问题：主节点挂掉时，从节点会取而代之，客户端上却并没有明显感知。原先第一个客户端在主节点中申请成功了一把锁，但是这把锁
+还没有来得及同步到从节点，主节点突然挂掉了。然后从节点变成了主节点，这个新的节点内部没有这个锁，所以当另一个客户端过来请求加锁时，
+立即就批准了。
+
+算法很易懂，起 5 个 master 节点，分布在不同的机房尽量保证可用性。为了获得锁，client 会进行如下操作：
+1. 得到当前的时间，微秒单位
+2. 尝试顺序地在 5 个实例上申请锁，当然需要使用相同的 key 和 random value，这里一个 client 需要合理设置与 master 节点沟通的 
+timeout 大小，避免长时间和一个 fail 了的节点浪费时间
+3. 当 client 在大于等于 3 个 master 上成功申请到锁的时候，且它会计算申请锁消耗了多少时间，这部分消耗的时间采用获得锁的当下时间
+减去第一步获得的时间戳得到，如果锁的持续时长（lock validity time）比流逝的时间多的话，那么锁就真正获取到了。
+4. 如果锁申请到了，那么锁真正的 lock validity time 应该是 origin（lock validity time） - 申请锁期间流逝的时间
+5. 如果 client 申请锁失败了，那么它就会在少部分申请成功锁的 master 节点上执行释放锁的操作，重置状态
+
+失败重试
+
+如果一个 client 申请锁失败了，那么它需要稍等一会在重试避免多个 client 同时申请锁的情况，最好的情况是一个 client 需要几乎同时
+向 5 个 master 发起锁申请。另外就是如果 client 申请锁失败了它需要尽快在它曾经申请到锁的 master 上执行 unlock 操作，便于其他 
+client 获得这把锁，避免这些锁过期造成的时间浪费，当然如果这时候网络分区使得 client 无法联系上这些 master，那么这种浪费就是不得不
+付出的代价了。
 ## 应用数据结构
 ### String
 ### Hash
@@ -104,11 +120,12 @@ redission的核心为：每隔一段时间若client仍持有锁为其续命、�
 4. lpop: 在左侧（即列表头部）删除数据。
 ### Set
 ![redis-set](../images/redis-set.PNG)
-### Sorted Set(zset)
+### Sorted Set(zset，可将到期时间作为分数实现延时队列)
 ![redis-sortedSet](../images/redis-sortedSet.PNG)
 ### BitMap(其实也是String的应用)
 ![redis-bitmap](../images/redis-bitmap.PNG)
-### BloomFilter
+### BloomFilter 
+以较少的内存提供较精确的存在判断
 1. bf.reserve [名称] [错误率] [初始bit数]
 2. bf.add
 3. bf.exists
@@ -118,6 +135,10 @@ redission的核心为：每隔一段时间若client仍持有锁为其续命、�
 GeoHash算法
 
 ![redis-GeoHash](../images/redis-GeoHash.PNG)
+### HyperLogLog
+以较小的内存提供较精确的统计，虽然统计不绝对精确，但内存相比set占用更少
+
+![redis-hyperloglog](../images/redis-hyperloglog.PNG)
 ## 内部数据结构
 ### dict
 Redis的一个database中所有key到value的映射，就是使用一个dict来维护的。不过，这只是它在Redis中的一个用途而已，
@@ -128,10 +149,17 @@ Redis配合使用dict和skiplist来共同维护一个sorted set。
 数据从第一个哈希表向第二个哈希表迁移。
 
 ![redis-dict](../images/redis-dict.PNG)
- * 两个哈希表（ht[2]）。只有在重哈希的过程中，ht[0]和ht[1]才都有效。而在平常情况下，只有ht[0]有效，ht[1]里面没有任何数据。
-上图表示的就是重哈希进行到中间某一步时的情况。
+ * 渐进式rehash，采取分而治之的方式， 将 rehash 键值对所需的计算工作均摊到对字典的每个添加、删除、查找和更新操作上，以及周期函数， 
+ 从而避免了集中式 rehash 而带来的庞大计算量
+ * 两个哈希表（ht[2]）。只有在重哈希的过程中，ht[0]和ht[1](rehash时才分配空间)才都有效。而在平常情况下，只有ht[0]有效，
+ ht[1]里面没有任何数据。上图表示的就是重哈希进行到中间某一步时的情况。
  * 当前重哈希索引（rehashidx）。如果rehashidx = -1，表示当前没有在重哈希过程中；否则，表示当前正在进行重哈希，
 且它的值记录了当前重哈希进行到哪一步了
+ * 在redis中每一个增删改查命令中都会判断数据库字典中的哈希表是否正在进行渐进式rehash，如果是则帮助执行一次。
+ * 虽然redis实现了在读写操作时，辅助服务器进行渐进式rehash操作，但是如果服务器比较空闲，
+ redis数据库将很长时间内都一直使用两个哈希表。所以在redis周期函数中，如果发现有字典正在进行渐进式rehash操作，则会花费1毫秒的时间，
+ 帮助一起进行渐进式rehash操作。
+ * 在rehash期间，同时有两个hash表在使用，会使得redis内存使用量瞬间突增，在Redis 满容状态下由于Rehash会导致大量Key驱逐。
 ### robj
 key是string类型，而value可以是多种数据类型。
 
@@ -221,6 +249,8 @@ typedef struct quicklist {
 skiplist本质上也是一种查找结构（但不同于平衡树和hash表），用于解决算法中的查找问题（Searching），即根据给定的key，
 快速查到它所在的位置（或者对应的value）。
 ![redis-skiplist](../images/redis-skiplist.PNG)
+
+列表中的元素越多，能够深入的层次就越深，能进入到顶层的概率就会越大。
 
 我们前面提到过，Redis中的sorted set，是在skiplist, dict和ziplist基础上构建起来的:
 1. 当数据较少时，sorted set是由一个ziplist来实现的。

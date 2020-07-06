@@ -1,4 +1,4 @@
-# Concurency
+# Concurrency
 参考自：https://www.jianshu.com/p/506c1e38a922
 
 并发包的设计在于volatile与cas。（ConcurrentHashMap中也使用到了synchronized）
