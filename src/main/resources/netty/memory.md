@@ -95,3 +95,7 @@ fireChannelRead()，由TailContext释放。
 但池化后，netty内存池持有这个ByteBuf的引用，并没有成为真正的垃圾，除非我们通过某种方式进行ReferenceCountUtil.release),
 若是非池化的DirectByteBuf，在申请新的DirectByteBuffer的时候，如果申请失败(堆存或者直接内存不足)会进行一次垃圾回收(System.gc)，
 于是真正的垃圾得到清理，不会造成OOM，但这池化了，并没有成为真正的垃圾。内存池分配细节？会膨胀？
+
+## 缓存与缓冲
+缓存用于高速访问。
+缓冲是指在数据流转过程中,不同层次速度不一致时,利用缓冲区来缓解上下层之间速率问题,一般叫做buffer，减少大量的随机写。

@@ -7,7 +7,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
     // setup to use Unsafe.compareAndSwapInt for updates
     private static final Unsafe unsafe = Unsafe.getUnsafe();//用户只能通过反射来创建Unsafe类
-    private static final long valueOffset;//静态的 域的偏移量
+    private static final long valueOffset;//静态的 值在对象中的偏移量
 
     static {
         try {

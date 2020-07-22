@@ -91,7 +91,7 @@ ReentrantLock与synchornize关键字作用十分相似，差别在于，在会�
                 try {
                     System.out.println(Thread.currentThread().getName() + " is ready");
                     /**
-                     * 先原子性-1，再判断是否为0，是则5个人去cas地把state设回5，接着往下执行，不是就自旋，
+                     * 先原子性-1，再判断是否为0，是则第5个人去cas地把state设回5，接着往下执行，不是就自旋，
                      * 当最后一个人到达时唤醒全部，CyclicBarrier进入下一代。
                      */
                     cyclicBarrier.await();

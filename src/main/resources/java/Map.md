@@ -140,7 +140,7 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
 
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
-    //扩容，返回扩容之后的数组，1.7中扩容迁移元素时，使用的是头插法，并发扩容可能会形成环（继而死循环）
+    //扩容，返回扩容之后的数组，1.7中使用的是头插法，并发扩容可能会形成环（继而死循环）
     final Node<K,V>[] resize() {
         Node<K,V>[] oldTab = table;
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
@@ -246,7 +246,7 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
 6. 如果这个位置上有旧值，那么判断是否覆盖。
 7. 如果覆盖旧值，那么在LinkedHashMap中判断是否启用访问顺序，若启用，则把当前元素加到双向链表末尾。
 8. 如果不存在旧值，那么已经把新元素加到链表末尾了，检查是否要扩容后，LinkedHashMap判断是否要删除双向链表中的最旧值（即链头）。
-### 数组的容量2的指数幂
+### 数组的容量2的指数
 ![hashmap-capacity](../images/hashmap-capacity.png)
 ### 扩容因子 0.75
 0.75是经过权衡的：

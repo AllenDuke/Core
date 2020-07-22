@@ -15,7 +15,7 @@ public void set(T value) {
         createMap(t, value);
 }
 
-//get去线性查找的时候会清除遇到的为null的key
+//get去线性查找的时候若遇到的为null的key，将先线性清楚为null的key
 public T get() {
     Thread t = Thread.currentThread();
     ThreadLocalMap map = getMap(t);

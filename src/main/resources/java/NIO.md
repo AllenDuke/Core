@@ -134,8 +134,8 @@ public class Cleaner extends PhantomReference<Object> {
 ## Selector
 1. select()阻塞或者超时等待，对应epoll_wait
 2. wakeup()别的线程调用后，可唤醒在select中阻塞的线程。
-   * 原理：JavaNIO 中的Channel时用Linux中的管道创建的，一个管道产生两个文件描述符，JavaNIO把它分为读文件描述符和写文件描述符，
-   而后把读文件描述符通过epoll_ctl注册到红黑树上。当调用wakeup时，会通过写文件描述符，
+   * 原理：JavaNIO 中的Channel时用Linux中的管道创建的，用两个文件描述符来创建管道，JavaNIO把它分为读文件描述符（socket描述符）
+   和写文件描述符，而后把读文件描述符通过epoll_ctl注册到红黑树上。当调用wakeup时，会通过写文件描述符，
    往channel（Liunx管道）中写入一个字节标记信息，然后就可以唤醒在select()中阻塞的线程了。
    * 管道：从管道读数据是一次性操作，数据一旦被读，它就从管道中被抛弃，释放空间以便写更多的数据。所以如果先调用wakeup那么下一次
    调用select()的时候会立即返回，如果先调用select()那么在select期间，多次调用wakeup()产生的效果与调用一次是一样的，
