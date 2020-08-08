@@ -16,8 +16,10 @@ public class MethodInvokeTest {
         Class<MethodInvokeTest> methodInvokeTestClass = MethodInvokeTest.class;
         Method test = methodInvokeTestClass.getMethod("test", String.class);
         /**
-         * 当invoke次数少于15时，使用的是native方法调用
-         * 当invoke次数超过15时，将生成一个类，类似动态代理一样的机制
+         * 当invoke次数<=15时，使用的是native方法调用
+         * 当invoke次数>15时，将生成一个类，类似动态代理一样的机制
+         * 因此，在这里要注意并发，假如有1000个线程都进入到创建GeneratedMethodAccessorXXX的逻辑里，
+         * 那意味着多创建了999个无用的类，这些类会一直占着内存，直到能回收Perm的GC发生才会回收
          */
         for (int i = 0; i < 16; i++) {
             test.invoke(new MethodInvokeTest(), "test");

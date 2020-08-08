@@ -1,5 +1,24 @@
 # websocket
 全双工，通过http升级为websocket，可实现服务端推送。
+http请求
+```java
+GET /chat HTTP/1.1
+Host: server.example.com
+Upgrade: websocket //升级后的协议
+Connection: Upgrade //表明要升级
+Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw== //密钥
+Sec-WebSocket-Protocol: chat, superchat
+Sec-WebSocket-Version: 13
+Origin: http://example.com
+```
+http响应
+```java
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
+Sec-WebSocket-Protocol: chat
+```
 ## 关于多人在线贪吃蛇游戏的设计方案
 当开始一局游戏时，服务端保存一份画面的数据，总体上，当服务端画面发生变动时，数据主动推送、同步到各玩家，各玩家接收、刷新画面。
 

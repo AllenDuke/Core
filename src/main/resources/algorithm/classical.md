@@ -44,6 +44,13 @@ for (int k = 1; k <= vexCount; k++) { //并入中转节点1,2,...vexCount，把k
 ![smallTree-kruskal](../images/smallestTree-kruskal.PNG)
 #### Prim算法 关注点
 ![smallTree-prim](../images/smallestTree-prim.PNG)
+## 洗牌算法
+### Knuth
+```java
+for(int i=n-1;i>=0;i--){
+    swap(arr[i],arr[rand(0,i)]);//每次从当前要洗牌的数组中随机选取一个与数组的最后一个交换
+}
+```
 ## 字符串
 ### KMP算法
 kmp算法是字符串模式匹配算法，用于寻找子串在父串中出现的位置。

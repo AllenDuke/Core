@@ -21,7 +21,7 @@ public class PreMainTraceAgent {
      */
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("agentArgs : " + agentArgs);
-        inst.addTransformer(new DefineTransformer(), true);
+        inst.addTransformer(new DefineTransformer(), true);//观察者模式
     }
 
     static class DefineTransformer implements ClassFileTransformer {

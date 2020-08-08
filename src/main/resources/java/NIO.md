@@ -59,7 +59,7 @@ Cleaner
 ```java
 public class Cleaner extends PhantomReference<Object> {
     private static final ReferenceQueue<Object> dummyQueue = new ReferenceQueue();//静态常量 引用队列
-    private static Cleaner first = null;
+    private static Cleaner first = null;//静态
     private Cleaner next = null;//双向链表结构
     private Cleaner prev = null;
     private final Runnable thunk;//Deallocator 清理的逻辑
@@ -83,8 +83,8 @@ public class Cleaner extends PhantomReference<Object> {
         return var1 == null ? null : add(new Cleaner(var0, var1));
     }
 
-//Cleaner对象的clean方法执行时机是在回收DirectByteBuffer引用的时候，同时回收Cleaner对象，这时JVM在判断该Cleaner对象关联
-// 的DirectBuffer已经不被任何对象引用了(也就是经过可达性分析判定为不可达的时候)。此时Cleaner对象会被JVM挂到PendingList上。
+
+//如果该DirectByteBuffer对象在一次GC中被回收了，在下一次FGC时，Cleaner对象会被JVM挂到PendingList上。
 // 然后有一个固定的线程扫描这个List，如果遇到Cleaner对象，那么就执行clean方法。
     public void clean() {
         if (remove(this)) {//从双向链表中移除

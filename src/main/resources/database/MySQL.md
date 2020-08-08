@@ -11,7 +11,7 @@ BC范式：第一范式基础上，消除对候选键的部分依赖和传递依
 反范式：通过增加冗余字段来减少表的连接，提高读效率。
 ## 数据库存储原理
 索引的数据结构为B+树（支持范围查找），Hash索引（不支持范围查找）
-## MyIsam
+## MyIsam 适合读多写少的情况（一般下，查询速度比Innodb快）
 1. MyIsam中的索引与数据是分开的，索引中的节点记录的是数据在磁盘中的位置。
 2. 不支持行锁，读取时对需要读到的所有表加锁，写入时则对表加排它锁.
 3. 不支持事务。
@@ -83,7 +83,7 @@ mysql默认的事务隔离级别为RR（Repeatable Read 可重复读），解决
 1. 事务1和事务2同时 , 事务1读数据 , 事务2插入数据提交 , 事务1插入同样的数据时报错说已经重复了。
 2. 事务1和事务2同时 , 事务1读数据 , 事务2插入数据提交 , 事务1更新数据却可以把事务2的数据也一块给更了。
 
-解决方式是在select读时候的sql中增加for update  , 会把我所查到的数据锁住 , 别的事务根本插不进去 , 这样就解决了,
+解决方式是在select读时候的sql中增加for update  lock in share mode, 会把我所查到的数据锁住 , 别的事务根本插不进去 , 这样就解决了,
 这里用到的是mysql的next-key locks。
 ### MVCC
 参考自：
@@ -128,7 +128,7 @@ InnoDB的MVCC,是通过在每行记录后面保存两个隐藏的列来实现的
     + 等于m_createor_trx_id 可见
   * 右侧 不可见
 
-总的来说，在事务隔离级别为RR下，当前事务不读取 后来事务或者正在发生的事务（即使这些正在发生的事务id较小且提交了，当前事务也不读取，
+总的来说，在事务隔离级别为RR下，快照创建后，当前事务不读取正在发生的事务（即使这些正在发生的事务id较小且提交了，当前事务也不读取，
 因为RR下的快照在第一次select时生成，且只生成一次） 新增或修改的数据（读取之前已经完成的或者是自己修改的），
 不理会是否被后来事务删除（被后来的事务删除了照样读取）。快照创建前，后来事务如果已经提交，那么当前事务在创建快照时，可见到后来事务的
 操作结果。
@@ -147,8 +147,6 @@ InnoDB的MVCC,是通过在每行记录后面保存两个隐藏的列来实现的
 1. Record lock ：对索引项加锁，即锁定一条记录。
 2. Gap lock：对索引项之间的‘间隙’、对第一条记录前的间隙或最后一条记录后的间隙加锁，即锁定一个范围的记录，不包含记录本身
 3. Next-key Lock：锁定一个范围的记录并包含记录本身（上面两者的结合）。
-
-![next-key](../images/next-key.png)
 #### 意向表锁的理解
 如果没有意向锁，当已经有人使用行锁对表中的某一行进行修改时，如果另外一个请求要对全表进行修改，
 那么就需要对所有的行是否被锁定进行扫描，在这种情况下，效率是非常低的；不过，在引入意向锁之后，
@@ -165,11 +163,15 @@ InnoDB的MVCC,是通过在每行记录后面保存两个隐藏的列来实现的
 3. 在可重复读的时候，快照在一次读时生成，之后的读在此快照的基础上读取的自己的修改。
 
 ### 日志
-#### undo log
+#### undo log 逻辑日志（记录变化过程）
 ![undo-log](../images/undo-log.png)
-#### redo log
+#### redo log 物理日志 某一时刻内存数据页状态
 ![redo-log](../images/redo-log.png)
-#### bin log
+
+#### buffer是为了缓解上下层速率不一致，减少随机写
+#### bin log 逻辑日志
+![binlog](../images/binlog.PNG)
+
 主从复制的基础：binlog日志和relaylog日志
 ##### 什么是MySQL主从复制
 简单来说就是保证主SQL（Master）和从SQL（Slave）的数据是一致性的，向Master插入数据后，
@@ -254,5 +256,6 @@ checkpoint是为了定期将db buffer的内容刷新到data file。当遇到内�
 #### in与exsits
 1. SELECT * FROM `user` WHERE id in (SELECT user_id FROM `order`)  先执行子查询，缓存子查询的结果集（排序后的？），
 然后父查询每一次检查id是否在这个缓存中。
-2. SELECT * FROM `user` WHERE exists (SELECT * FROM `order` WHERE user.id = order.user_id) exsits相当于一个函数，去判断
+2. SELECT * FROM `user` WHERE exists (SELECT * FROM `order` WHERE user_id = user.id) exsits相当于一个函数，去判断
 后面的结果集是否为空，不空返回true，空返回false。 好处在于后面的查询可以用上索引。
+事实上，以上可用连接查询，select * from user,order where user.id=order.user_id
