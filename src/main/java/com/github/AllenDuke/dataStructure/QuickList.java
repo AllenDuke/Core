@@ -1,4 +1,4 @@
-package com.github.AllenDuke;
+package com.github.AllenDuke.dataStructure;
 
 import com.sun.jmx.remote.internal.ArrayQueue;
 
@@ -19,6 +19,7 @@ public class QuickList<E> implements List<E> {
 
     private static class Node<E>{
 
+        /* 连续内存 */
         ArrayQueue<E> queue=new ArrayQueue<>(SINGLE_CAPACITY);
 
         Node<E> pre;

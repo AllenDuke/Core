@@ -1,5 +1,7 @@
 package com.github.AllenDuke;
 
+import com.github.AllenDuke.dataStructure.IntHashMap;
+
 import java.util.HashMap;
 
 /**

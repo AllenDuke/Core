@@ -1,5 +1,7 @@
 package com.github.AllenDuke;
 
+import com.github.AllenDuke.dataStructure.QuickList;
+
 import java.util.ArrayList;
 import java.util.List;
 

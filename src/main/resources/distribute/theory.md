@@ -24,3 +24,6 @@ Zookeeper Atomic Broadcast（Zookeeper 原子广播协议）。
 ### 选举过程
 每个follower都有一个投票箱，初始都会投自己，每收到别人的选票就会计算（事务id,机器id）新的投票结果，并广告结果，如果某follower得到
 一半以上得选票，那么它就成为了新的领导。
+
+## 一致性hash算法
+参考：https://www.jianshu.com/p/e968c081f563

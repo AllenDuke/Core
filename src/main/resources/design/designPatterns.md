@@ -33,3 +33,14 @@ public class OperationFactory{
 这样完美了的利用好了开放封闭的原则！棒极了！但是我要是增加一个新的算法，比如是幂运算，那么它就要同时增加招招幂运算，李光幂运算，
 慧鹏幂运算这几个类，同时还需要修改Ifactory，招招工厂，李光工厂！违反了开放封闭的原则！
 
+## 装饰者模式
+![decorator-pattern](../images/decorator-pattern.PNG)
+
+## 模板方法
+![template-pattern](../images/template-pattern.PNG)
+
+## 观察者模式
+addListener()
+
+
+

@@ -1,4 +1,4 @@
-package com.github.AllenDuke;
+package com.github.AllenDuke.sortAlgorithm;
 
 /**
  * @author 杜科
