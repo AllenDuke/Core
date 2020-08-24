@@ -1,22 +1,41 @@
 package com.github.AllenDuke;
 
+import java.util.*;
+
 public class Main {
 
     public static void main(String[] args) {
-
-        System.out.println(max(3, 2));
-        System.out.println(max(-1, 5));
+        Scanner scanner = new Scanner(System.in);
+        String s=scanner.next();
+        int k=scanner.nextInt();
+        for(int i=0;i<k;i++){
+            scanner.nextInt();
+            scanner.nextInt();
+            System.out.println(1);
+        }
     }
 
-    static int max(int a,int b){
-        double mid=(a+b)/2.0;
-        double detaV=abs(a-b);
-        return (int) (mid+detaV/2.0);
+    static Set<String> set=new HashSet<>();
+
+    static void trace(String s,Queue<String> queue,int k){
+        for(int i=0;i<s.length();i++){
+            for(int j=i+1;j<=s.length();j++) {
+                String sub=s.substring(i,j);
+                if(set.contains(sub)) continue;
+                if(queue.size()<k){
+                    queue.add(sub);
+                    set.add(sub);
+                    continue;
+                }
+                if(sub.compareTo(queue.peek())<0) {
+                    queue.add(sub);
+                    set.add(sub);
+                    String poll = queue.poll();
+                    set.remove(poll);
+                }
+            }
+        }
     }
 
-    static int abs(int n){
-        int i=n>>31;
-        return (n^i)-i;
-    }
 
 }

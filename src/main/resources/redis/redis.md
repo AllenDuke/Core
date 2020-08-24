@@ -113,6 +113,7 @@ client 获得这把锁，避免这些锁过期造成的时间浪费，当然如�
 ## 应用数据结构
 ### String
 ### Hash
+当数量少的时候，使用ziplist实现，当数量多的时候，使用dict实现。
 ### List 可用作阻塞队列
 1. lpush: 在左侧（即列表头部）插入数据。
 2. rpop: 在右侧（即列表尾部）删除数据。
@@ -139,6 +140,10 @@ GeoHash算法
 以较小的内存提供较精确的统计，虽然统计不绝对精确，但内存相比set占用更少
 
 ![redis-hyperloglog](../images/redis-hyperloglog.PNG)
+
+pf 的内存占用为什么是 12k？
+在 Redis 的 HyperLogLog实现中用到的是 16384 个桶，也就是 2^14，每个桶的 maxbits 需要 6 个 bits 来存储，最
+大可以表示 maxbits=63，于是总共占用内存就是 2^14 * 6 / 8 = 12k 字节。
 ## 内部数据结构
 ### dict
 Redis的一个database中所有key到value的映射，就是使用一个dict来维护的。不过，这只是它在Redis中的一个用途而已，
