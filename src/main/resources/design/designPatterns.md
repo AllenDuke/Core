@@ -42,5 +42,8 @@ public class OperationFactory{
 ## 观察者模式
 addListener()
 
+## 迭代器模式
+
+
 
 

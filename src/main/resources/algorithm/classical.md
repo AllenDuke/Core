@@ -5,15 +5,16 @@
 ## 基数排序
 ![sort-radix](../images/sort-radix.PNG)
 
-由于基数排序无法对负数进行操作，当遇到负数的情况时可以将所有元素都加上一个常数使得所有元素为自然数后再排序，
-输出时再减去这个常数即可.
+基数排序对负数进行操作时，可以将所有元素都加上一个常数使得所有元素为自然数后再排序，输出时再减去这个常数即可。
+## 希尔排序
+![sort-shell](../images/sort-shell.PNG)
+
+希尔排序是把记录按下标的一定增量分组，对每组使用直接插入排序算法排序；随着增量逐渐减少，每组包含的关键词越来越多，当增量减至1时，
+整个文件恰被分成一组，算法便终止。
 ## 图论
 ### 最短路径算法
 #### 迪杰斯特拉算法 单源最短路径
-![shortestPath-dijkstra1](../images/shortestPath-dijkstra1.PNG)
-1. (v0,v1,1), (v0,v2,5), (v0,...,~)  ~意为无穷大
-2. (v1,v2,1+3<5,更新到v2的路径)...
-
+![shortestPath](../images/shortestPath-dijkstra1.PNG)
 缺点：单源，路径非负。
 #### Floyd算法 多源最短路径（可求任意两点之间的最短路径）做题时建议使用此算法
 从任意节点i到任意节点j的最短路径不外乎2种可能：
@@ -25,7 +26,7 @@
 （即小问题的解），因此它天生适用于用矩阵来作为其数据结构，因此在本算法中，我们将不使用Guava-Graph结构（可用来做dijkstra算法），
 而采用邻接矩阵来作为本例的数据结构）
 
-![shortestPath-dijkstra1](../images/shortestPath-floyd.PNG)
+![shortestPath](../images/shortestPath-floyd.PNG)
 1. 当不经过任意第三节点时，其最短路径为初始路径。
 2. 枚举中转节点。
 ```java
@@ -63,3 +64,11 @@ kmp算法是字符串模式匹配算法，用于寻找子串在父串中出现�
 
 例如对于字符串 abacaba，其前缀有 a, ab, aba, abac, abacab，后缀有bacaba, acaba, caba, aba, ba, a。最长公共前后缀就是 aba。
 ## 哈夫曼编码
+
+## 8大排序算法的稳定性
+选择排序、快速排序、希尔排序、堆排序不是稳定的排序算法；
+
+冒泡排序、插入排序、归并排序和基数排序是稳定的排序算法
+
+## 表达式计算 中缀转后缀
+![express-mid2post](../images/express-mid2post.PNG)

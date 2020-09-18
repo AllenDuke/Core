@@ -8,6 +8,8 @@ package com.github.AllenDuke.inherit;
  */
 public class Dad {
 
+    Son son;
+
     protected void say(){
 
     }

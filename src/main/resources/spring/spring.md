@@ -94,7 +94,7 @@ public class ErrorHandlerAspect {
 
 事务的底层靠AOP实现，将事务的提交、回滚切到贴有@Transactional的方法上。
 
-spring将mysql的事务自动提交设置为false，否则将会一条语句一个事务。
+spring将mysql的事务自动提交设置为false，否则将会一条语句一个事务。利用savePoint来实现事务的嵌套。
 ### @Transational注解
 参见：https://www.ibm.com/developerworks/cn/java/j-master-spring-transactional-use/
 ## 常见面试题
@@ -154,6 +154,8 @@ public interface FactoryBean<T> {
     boolean isSingleton();
 }
 ```
+### @Autowired与@Resource
+@Autowired是spring的注解，按照type来寻找，@Resource是jdk的注解，先name再type。
 ## 常用注解
 1. @RestController
 2. @Service

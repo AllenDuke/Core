@@ -38,9 +38,47 @@ public class HeapSort {
 
     public static void main(String[] args) {
         int[] a={5,3,4,1,2};
-        sort(a);
+//        sort(a);
+        heapSort(a);
         for(int i=0;i<a.length;i++){
             System.out.print(a[i]+" ");
+        }
+    }
+
+    public static void heapSort(int[] a){
+        int end=a.length-1;
+        for(int i=(end-1)/2;i>=0;i--){
+            adjustHeap(a,i,end);
+        }
+        for(int i=end;i>=0;i--){
+            int t=a[0];
+            a[0]=a[i];
+            a[i]=t;
+            adjustHeap(a,0,i-1);
+        }
+    }
+
+    /* 从cur开始往下调整堆 */
+    public static void adjustHeap(int[] a,int cur,int end){
+        while (cur<=end){
+            int l=cur*2+1;
+            int r=cur*2+2;
+            int lchirld=Integer.MIN_VALUE;
+            int rchirld=Integer.MIN_VALUE;
+            if(l<=end) lchirld=a[l];
+            if(r<=end) rchirld=a[r];
+            if(a[cur]>=Math.max(lchirld,rchirld)) return;
+            if(lchirld>rchirld){
+                int t=a[cur];
+                a[cur]=a[l];
+                a[l]=t;
+                cur=l;
+                continue;
+            }
+            int t=a[cur];
+            a[cur]=a[r];
+            a[r]=t;
+            cur=r;
         }
     }
 }

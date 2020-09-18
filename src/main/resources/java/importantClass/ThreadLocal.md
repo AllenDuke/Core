@@ -630,5 +630,88 @@ TransactionSynchronizationManager首先从数据库连接池中获得一个conne
     * 当垃圾回收器准备回收一个对象时，如果发现它还有虚引用，就会在垃圾回收后，将这个虚引用加入引用队列，在其关联的虚引用出队前，
     不会彻底销毁该对象。 所以可以通过检查引用队列中是否有相应的虚引用来判断对象是否已经被回收了。
     
+## netty中的FastThreadLocal InternalThreadLocalMap
+在JDK 的 threadLocal 中设置 Netty 的 InternalThreadLocalMap ，然后，这个 InternalThreadLocalMap 中设置 Netty 的 
+FastThreadLcoal。
+
+ThreadLocalMap是一个线性探测法的map，而InternalThreadLocalMap使用下标确定，每个FastThreadLocal在构造时都会从
+InternalThreadLocalMap那里得到一个唯一的index，用以唯一确定自己在InternalThreadLocalMap中的位置。
+
+InternalThreadLocalMap中index的生成使用的时AtomicInteger.getAndIncrement()方法。
+
+FastThreadLocal利用字节填充来解决伪共享问题。
+```java
+    //FastThreadLocal内
+    public FastThreadLocal() {
+        index = InternalThreadLocalMap.nextVariableIndex();
+    }
+    public final void set(V value) {
+        if (value != InternalThreadLocalMap.UNSET) {
+            InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
+            setKnownNotUnset(threadLocalMap, value);
+        } else {
+            remove();
+        }
+    }
+    public final void set(InternalThreadLocalMap threadLocalMap, V value) {
+        if (value != InternalThreadLocalMap.UNSET) {
+            setKnownNotUnset(threadLocalMap, value);
+        } else {
+            remove(threadLocalMap);
+        }
+    }
+    private void setKnownNotUnset(InternalThreadLocalMap threadLocalMap, V value) {
+        if (threadLocalMap.setIndexedVariable(index, value)) {
+            addToVariablesToRemove(threadLocalMap, this);
+        }
+    }
+
+    //InternThreadLoalMap内
+public final class InternalThreadLocalMap extends UnpaddedInternalThreadLocalMap
+
+class UnpaddedInternalThreadLocalMap {
+
+    static final ThreadLocal<InternalThreadLocalMap> slowThreadLocalMap = new ThreadLocal<InternalThreadLocalMap>();
+    static final AtomicInteger nextIndex = new AtomicInteger();
+    Object[] indexedVariables;
+}
+
+    public static int nextVariableIndex() {
+        int index = nextIndex.getAndIncrement();
+        if (index < 0) {
+            nextIndex.decrementAndGet();
+            throw new IllegalStateException("too many thread-local indexed variables");
+        }
+        return index;
+    }
+    public boolean setIndexedVariable(int index, Object value) {
+        Object[] lookup = indexedVariables;
+        if (index < lookup.length) {
+            Object oldValue = lookup[index];
+            lookup[index] = value;
+            return oldValue == UNSET;
+        } else {
+            expandIndexedVariableTableAndSet(index, value);
+            return true;
+        }
+    }
+    //直接扩容
+    private void expandIndexedVariableTableAndSet(int index, Object value) {
+        Object[] oldArray = indexedVariables;
+        final int oldCapacity = oldArray.length;
+        int newCapacity = index;
+        newCapacity |= newCapacity >>>  1;
+        newCapacity |= newCapacity >>>  2;
+        newCapacity |= newCapacity >>>  4;
+        newCapacity |= newCapacity >>>  8;
+        newCapacity |= newCapacity >>> 16;
+        newCapacity ++;
+
+        Object[] newArray = Arrays.copyOf(oldArray, newCapacity);
+        Arrays.fill(newArray, oldCapacity, newArray.length, UNSET);
+        newArray[index] = value;
+        indexedVariables = newArray;
+    }
+```
 
 

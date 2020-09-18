@@ -113,7 +113,8 @@ client 获得这把锁，避免这些锁过期造成的时间浪费，当然如�
 ## 应用数据结构
 ### String
 ### Hash
-当数量少的时候，使用ziplist实现，当数量多的时候，使用dict实现。
+当数量少且均为数字时，使用inset(O(log n)判断存在)，否则，当数量少的时候，使用ziplist实现(O(n)判断存在)，否则，当数量多的时候，
+使用dict实现(O(1)判断存在)。
 ### List 可用作阻塞队列
 1. lpush: 在左侧（即列表头部）插入数据。
 2. rpop: 在右侧（即列表尾部）删除数据。
@@ -121,6 +122,10 @@ client 获得这把锁，避免这些锁过期造成的时间浪费，当然如�
 4. lpop: 在左侧（即列表头部）删除数据。
 ### Set
 ![redis-set](../images/redis-set.PNG)
+
+支持的运算：集合的交集（共同关注模型），并集，差集运算。
+
+当元素为整数，且元素个数不超过512时，底层使用inset来实现（判断存在O(log n)），否则使用dict（判断存在O(1)）。
 ### Sorted Set(zset，可将到期时间作为分数实现延时队列)
 ![redis-sortedSet](../images/redis-sortedSet.PNG)
 ### com.github.AllenDuke.dataStructure.BitMap(其实也是String的应用，亿级用户的日活跃数统计)
@@ -203,7 +208,7 @@ SDS与C字符串的比较，SDS在C字符串的基础上加入了free和len字�
 由于sds就是一个字符数组，所以对它的某一部分进行操作似乎都比较简单。但是，string除了支持这些操作之外，当它存储的值是个数字的时候，
 它还支持incr、decr等操作。那么，当string存储数字值的时候，它的内部存储不是sds了，而且，这种情况下，
 setbit和getrange的实现也会有所不同。
-### ziplist
+### ziplist Hash结构的一个实现
 ziplist可以用于存储字符串或整数，其中整数是按真正的二进制表示进行编码的，而不是编码成字符串序列。
 它能以O(1)的时间复杂度在表的两端提供push和pop操作，但它又不是一个LinkedList，可以认为它是一个ArrayQueue。
 
@@ -273,23 +278,26 @@ MaxLevel = 32
 ```
 
 我们前面提到过，Redis中的sorted set，是在skiplist, dict和ziplist基础上构建起来的:
-1. 当数据较少时，sorted set是由一个ziplist来实现的。
+1. 当数据较少时，sorted set是由一个ziplist来实现的(当字段个数小于hash-max-ziplist-entries（配置文件参数，默认512）
+并且每个字段值长度小于hash-max-ziplist-value（配置文件参数，默认64)。
 2. 当数据多的时候，sorted set是由一个叫zset的数据结构来实现的，这个zset包含一个dict + 一个skiplist。
 dict用来查询数据到分数(score)的对应关系，而skiplist用来根据分数查询数据（可能是范围查找）.
+
 使用原因：
 1. 要有平衡树的查找性能，跳表在插入性能上明显优于平衡树，平衡树的插入和删除操作可能引发子树的调整，逻辑复杂，
 而skiplist的插入和删除只需要修改相邻节点的指针，操作简单又快速。
 2. 比平衡树占的内存小。平衡树每个节点包含2个指针（分别指向左右子树），而skiplist每个节点包含的指针数目平均为1/(1-p)，
 具体取决于参数p的大小。如果像Redis里的实现一样，取p=1/4，那么平均每个节点包含1.33个指针，比平衡树更有优势。
-3. 比平衡树更易实现和调试。
-### inset 应用数据结构为set
+3. 更快的范围查找。第1层链表不是一个单向链表，而是一个双向链表。而平衡树就只能中序遍历了。
+4. 比平衡树更易实现和调试。
+### inset 应用数据结构为（元素为整数）set
 intset是一个由整数组成的有序集合，从而便于在上面进行二分查找，用于快速地判断一个元素是否属于这个集合。在内存分配上与ziplist类似，
 是连续的一整块内存空间，而且对于大整数和小整数（按绝对值）采取了不同的编码，尽量对内存的使用进行了优化。
 ```java
 typedef struct intset {
-    uint32_t encoding;
-    uint32_t length;
-    int8_t contents[];
+    uint32_t encoding; /* 编码方式 */
+    uint32_t length; /* 集合内元素个数 *
+    int8_t contents[]; /* 保存元素的数组 */
 } intset;
 ```
 ![redis-inset](../images/redis-inset.PNG)
@@ -297,5 +305,8 @@ intset与ziplist相比：
  * ziplist可以存储任意二进制串，而intset只能存储整数。
  * ziplist是无序的，而intset是从小到大有序的。因此，在ziplist上查找只能遍历，而在intset上可以进行二分查找，性能更高。
  * ziplist可以对每个数据项进行不同的变长编码（每个数据项前面都有数据长度字段len），而intset只能整体使用一个统一的编码（encoding）。
-
+ 
+ 当元素 不满足为整数 或者 元素个数不超过512 这两个条件时，set用dict实现。
+ 
+ 为了节省内存，使用升级与降级，即原来是32bit可以表示一个整数，可能会升级为64bit或者降级为16bit。
 

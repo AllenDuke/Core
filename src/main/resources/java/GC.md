@@ -39,7 +39,7 @@ G1 GC提出了不确定性Region，每个空闲 Region 不是为某个固定年�
 并收集各个Region的存活对象信息
 3. remark: 最终标记过程，整个过程STW，标记出那些在并发标记过程中遗漏的，或者内部引用发生变化的对象
 4. clean up: 垃圾清除过程，STW，如果发现一个Region中没有存活对象，则把该Region加入到空闲列表中。
-   * cms中为并发清理，因而会有浮动垃圾的问题。
+   * **cms中为并发清理，因而会有浮动垃圾的问题。**
 5. 注意：这个时候才开始young gc去复制存活对象或者触发mixed gc。
 #### young gc 标记——复制
 发生在年轻代的GC算法，一般对象（除了巨型对象）都是在eden region中分配内存，当所有eden region被耗尽无法申请内存时，
@@ -62,7 +62,7 @@ G1 GC提出了不确定性Region，每个空闲 Region 不是为某个固定年�
 #### full gc 标记——整理（标记——清除——压缩）
 如果对象内存分配速度过快，mixed gc来不及回收，导致老年代被填满，就会触发一次full gc，
 G1的full gc算法就是单线程执行的serial old gc，会导致异常长时间的暂停时间，需要进行不断的调优，尽可能的避免full gc.
-### 三色标记法 并发收集
+### 三色标记法 并发标记
 ![cms&g1](../images/cms&g1.PNG)
 ### RSet
 ![rset](../images/rset.PNG)

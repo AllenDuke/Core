@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 /**
  * @author 杜科
- * @description -Xmx5m -Xms5m
+ * @description -Xmx5m -Xms5m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=D:\heap-dump\
  * @contact AllenDuke@163.com
  * @date 2020/5/22
  */
@@ -20,7 +20,7 @@ public class OutOfMemoryTest {
             allocate();
         }catch (Throwable throwable){
             System.out.println(throwable.toString());
-            users.clear();
+//            users.clear();
             System.out.println("释放后，gc时可以回收内存，继续执行不会OOM");
         }
         for (int i = 0; i < 1000; i++) {

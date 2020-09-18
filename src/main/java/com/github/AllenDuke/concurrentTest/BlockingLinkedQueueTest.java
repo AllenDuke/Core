@@ -9,15 +9,17 @@ package com.github.AllenDuke.concurrentTest;
 public class BlockingLinkedQueueTest {
 
     public static void main(String[] args) throws InterruptedException {
+//        LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<>(20);
         BlockingLinkedQueue queue = new BlockingLinkedQueue(20);
+//        LinkedBlockingQueueWithSynchronized<Object> queue = new LinkedBlockingQueueWithSynchronized<>(20);
         System.out.println("start adding...");
-        for(int i=0;i<5;i++){
+        for(int i=0;i<50;i++){
             int finalI = i;
             new Thread(()->{
-                for(int j=1;j<=5;j++){
+                for(int j=1;j<=50;j++){
                     try {
                         queue.add(finalI *5+j);
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -25,13 +27,13 @@ public class BlockingLinkedQueueTest {
         }
         Thread.sleep(100);
         System.out.println("start taking...");
-        for(int i=0;i<5;i++){
+        for(int i=0;i<50;i++){
             int finalI = i;
             new Thread(()->{
-                for(int j=1;j<=5;j++){
+                for(int j=1;j<=50;j++){
                     try {
                         queue.take();
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }

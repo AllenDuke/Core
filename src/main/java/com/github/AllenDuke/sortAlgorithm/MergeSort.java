@@ -1,5 +1,7 @@
 package com.github.AllenDuke.sortAlgorithm;
 
+import java.util.Arrays;
+
 /**
  * @author 杜科
  * @description 归并排序
@@ -18,14 +20,14 @@ public class MergeSort {
 
     public static void sort(int[] a,int l,int r){
         if(l>=r) return;
-        int mid=l+(r-l)/2;
+        int mid=l+((r-l)>>1); /* >> 优先级低于 + */
         sort(a,l,mid);
         sort(a,mid+1,r);
         merge(a,l,mid,r);
     }
 
     public static void merge(int[] a,int l,int mid,int r){
-        System.arraycopy(a,0,t,0,a.length);
+        t= Arrays.copyOf(a,a.length);
         int i=l;
         int j=mid+1;
         for(int k=l;k<=r;k++){
@@ -44,7 +46,7 @@ public class MergeSort {
     }
 
     public static void main(String[] args) {
-        int[] a={5,3,4,1,2};
+        int[] a={5,3,1,4,2};
         sort(a);
         for(int i=0;i<a.length;i++){
             System.out.print(a[i]+" ");

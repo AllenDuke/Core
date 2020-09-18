@@ -125,6 +125,21 @@ public ArrayList() {
             Integer.MAX_VALUE ://数组大小可以达到int的最大值的
             MAX_ARRAY_SIZE;
     }
+
+    public E remove(int index) {
+        rangeCheck(index);
+
+        modCount++;
+        E oldValue = elementData(index);
+
+        int numMoved = size - index - 1;
+        if (numMoved > 0) /* 如果命中最后一个，那么不进行复制，即数组的实际大小不变，可调用trimToSize补充复制这一步 */
+            System.arraycopy(elementData, index+1, elementData, index,
+                             numMoved);
+        elementData[--size] = null; // clear to let GC do its work
+
+        return oldValue;
+    }
 ```
 **由此可知，最佳实践为当可以确定容量时，尽量使用有参构造来避免后面的频繁扩容，因为扩容是相当耗时的。** 
 ### 为什么是1.5倍扩容？
@@ -133,3 +148,6 @@ public ArrayList() {
 假设2倍：2，4，8，16，32(永远也无法重用之前释放的连续空间）
 ### fail-fast
 详细可参见我的博客：https://www.cnblogs.com/AllenDuke/p/12346745.html
+### trimToSize
+当ArrayList调用fastRemove进行删除时，如果删除的是数组的最后一个元素的话，是不会进行复制的，只是将最后一个元素置空，改变了size的值，
+而实际容量不变，而trimToSize则是补充了复制这一步。

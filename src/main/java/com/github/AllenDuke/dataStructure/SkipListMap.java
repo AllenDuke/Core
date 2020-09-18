@@ -13,7 +13,7 @@ public class SkipListMap<K, V> {
     /* 元素个数 */
     private int size;
 
-    /* 虚拟头部 null */
+    /* 虚拟头部 */
     private Node<K, V> head;
 
     /* 默认最大为32层 */

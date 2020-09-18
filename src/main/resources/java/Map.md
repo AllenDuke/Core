@@ -84,6 +84,16 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
     public V put(K key, V value) {
         return putVal(hash(key), key, value, false, true);
     }
+    
+    /**
+     * hash值的高16位为hashcode的高16位，低16位为hashcode高16位与hashcode低16位异或后的结果。
+     * 原因：因为数组的长度为2的次方数，所以最终计算下标时，使用(table.length-1)&hash(key)，
+     * 这样一来，(table.length-1)的高位总是0，key的hashcode的高位没有参与到运算，为了进一步降低冲突，应使得高位也参与运算
+     * 在权衡质量与速度后，选择了这种方式。成本不高，质量也不错。
+    static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
 
 /**
      * Implements Map.put and related methods
@@ -247,6 +257,27 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
 7. 如果覆盖旧值，那么在LinkedHashMap中判断是否启用访问顺序，若启用，则把当前元素加到双向链表末尾。
 8. 如果不存在旧值，那么已经把新元素加到链表末尾了，检查是否要扩容后，LinkedHashMap判断是否要删除双向链表中的最旧值（即链头）。
 ### 数组的容量2的指数
+```java
+    /* 返回刚好>=cap的2^n */
+    /**
+     * 假如cap二进制为：01******
+     * 那么 01****** | 001***** = 011*****
+     * 那么 011***** | 00011*** = 01111***
+     * 那么 01111*** | 00000111 = 01111111
+     * 那么 01111111 + 1        = 10000000
+     * 使得从最高的1开始往后全变为1，然后+1等于刚好>=cap的2^n
+     */ 
+    static final int tableSizeFor(int cap) {
+        int n = cap - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+    }
+```
+
 ![hashmap-capacity](../images/hashmap-capacity.png)
 ### 扩容因子 0.75
 0.75是经过权衡的：
@@ -268,8 +299,11 @@ LinkedHashMap的put调用的是父类HashMap的put，所以这里顺便也研究
 ![hashmap1.7-loop](../images/hashmap1.7-loop.PNG)
 
 可结合HashMap1.7扩容的源码进行分析。
-## Hashtable 不允许null键null值
-其实就是方法加了synchronized的HashMap，一般不用了，因为有更好的并发容器ConcurrentHashMap。
+## Hashtable
+1. 其实就是方法加了synchronized的HashMap，一般不用了，因为有更好的并发容器ConcurrentHashMap。
+2. 不允许null键null值
+3. 桶下标的计算。int index = (key.hashCode() & 0x7FFFFFFF) % tab.length; 先得到key.hashCode()的一个正值，再取模。
+4. 初始容量与扩容计算。HashTable中hash数组默认大小是11，增加的方式是 old*2+1。
 ## TreeMap 数据结构为红黑树
 支持排序（红黑树结构）
 ### 用法
