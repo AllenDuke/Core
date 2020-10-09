@@ -14,13 +14,13 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class BlockingLinkedQueue<E> {
 
-    LinkedList<E> list;
+    private final LinkedList<E> list;
 
-    private Lock putLock=new ReentrantLock();
-    private Condition notFull=putLock.newCondition();
+    private final ReentrantLock putLock=new ReentrantLock();
+    private final Condition notFull=putLock.newCondition();
 
-    private Lock takeLock=new ReentrantLock();
-    private Condition notEmpty=takeLock.newCondition();
+    private final ReentrantLock takeLock=new ReentrantLock();
+    private final Condition notEmpty=takeLock.newCondition();
 
     private final int capacity;
 
@@ -55,27 +55,40 @@ public class BlockingLinkedQueue<E> {
     }
 
     public void add(E e) throws InterruptedException {
-        putLock.lock();
-        /**
-         * 虽然在这里if也是可行的，但是一般wait在循环保护当中，防止被意外唤醒
-         */
-        while (count.get()==capacity) notFull.await();
-        list.addLast(e);
-        System.out.println(Thread.currentThread().getId() + " add " + e);
-        int oldCount=count.getAndIncrement(); /* 这里单纯用volatile 去修饰一个int count是不足够的 因为可能消费者去修改 */
-        if (oldCount+1 < capacity) notFull.signal(); /* 生产者告诉后续的生产者，可以继续生产 */
-        putLock.unlock();
+        final ReentrantLock putLock = this.putLock;
+        final AtomicInteger count = this.count;
+        int oldCount=-1;
+        putLock.lockInterruptibly();
+        try {
+            /**
+             * 虽然在这里if也是可行的，但是一般wait在循环保护当中，防止被意外唤醒
+             */
+            while (count.get()==capacity) notFull.await();
+            list.addLast(e);
+            System.out.println(Thread.currentThread().getId() + " add " + e);
+            oldCount=count.getAndIncrement(); /* 这里单纯用volatile 去修饰一个int count是不足够的 因为可能消费者去修改 */
+            if (oldCount+1 < capacity) notFull.signal(); /* 生产者告诉后续的生产者，可以继续生产 */
+        }finally {
+            putLock.unlock();
+        }
         if(oldCount==0) signalNotEmpty(); /* 由空变非空 唤醒消费者 todo 是否可以在putLock解锁前去调用呢 */
     }
 
     public E take() throws InterruptedException {
-        takeLock.lock();
-        while (count.get()==0) notEmpty.await();
-        E e=list.removeFirst();
-        System.out.println(Thread.currentThread().getId() + " get " + e);
-        int oldCount=count.getAndDecrement();
-        if(oldCount>1) notEmpty.signal(); /* 消费者告诉后续的消费者，可以继续消费 */
-        takeLock.unlock();
+        final AtomicInteger count = this.count;
+        final ReentrantLock takeLock = this.takeLock;
+        int oldCount=-1;
+        E e;
+        takeLock.lockInterruptibly();
+        try {
+            while (count.get()==0) notEmpty.await();
+            e=list.removeFirst();
+            System.out.println(Thread.currentThread().getId() + " get " + e);
+            oldCount=count.getAndDecrement();
+            if(oldCount>1) notEmpty.signal(); /* 消费者告诉后续的消费者，可以继续消费 */
+        }finally {
+            takeLock.unlock();
+        }
         if(oldCount==capacity) signalNotFull(); /* 由满变非满 唤醒消费者 */
         return e;
     }

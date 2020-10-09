@@ -19,7 +19,6 @@ public class SkipListMap<K, V> {
     /* 默认最大为32层 */
     private static final int MAX_LEVEL = 32;
 
-    /* 当前位于第i层，进入第i+1层的概率 */
     private static final double P = 0.25;
 
     /* 当前头部有效层数，头部的有效层数总是最高的*/
@@ -92,11 +91,11 @@ public class SkipListMap<K, V> {
     private int randomLevel() {
         int level = 1;
 
-        /* 以概率P往上一层 */
-        while ((Math.random() <= P) && level < MAX_LEVEL) {
+        /* todo 这里有点看不懂 */
+        while (((int)Math.random() & 0xFFFF) < (P * 0xFFFF)) {
             level++;
         }
-        return level;
+        return level<MAX_LEVEL?level:MAX_LEVEL;
     }
 
     public V get(K k) {

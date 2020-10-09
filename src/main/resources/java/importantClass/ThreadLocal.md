@@ -1,4 +1,5 @@
 # ThreadLocal
+有windows和linux的区别
 ## ThreadLocal用法
 ```java
 ThreadLocal<String> localName = new ThreadLocal();

@@ -1,5 +1,7 @@
 package com.github.AllenDuke.concurrentTest;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
  * @author 杜科
  * @description 测试
@@ -9,8 +11,17 @@ package com.github.AllenDuke.concurrentTest;
 public class BlockingLinkedQueueTest {
 
     public static void main(String[] args) throws InterruptedException {
-//        LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<>(20);
-        BlockingLinkedQueue queue = new BlockingLinkedQueue(20);
+        multiThreadTest();
+    }
+
+    static void singleThreadTest() throws InterruptedException {
+        LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<>(20);
+        queue.put(new Object());
+    }
+
+    static void multiThreadTest() throws InterruptedException {
+        LinkedBlockingQueue<Object> queue = new LinkedBlockingQueue<>(20);
+//        BlockingLinkedQueue queue = new BlockingLinkedQueue(20);
 //        LinkedBlockingQueueWithSynchronized<Object> queue = new LinkedBlockingQueueWithSynchronized<>(20);
         System.out.println("start adding...");
         for(int i=0;i<50;i++){
