@@ -18,6 +18,7 @@ public class HyperLogLogTest {
                 this.maxbits = bits;
             }
         }
+
         private int lowZeros(long value) {
             int i = 1;
             for (; i < 32; i++) {
