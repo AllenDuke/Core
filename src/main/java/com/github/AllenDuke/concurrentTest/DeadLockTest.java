@@ -1,5 +1,6 @@
 package com.github.AllenDuke.concurrentTest;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,10 +14,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DeadLockTest {
 
     public static void main(String[] args) throws InterruptedException {
-//        loopWait();
+        loopWait();
 //        spinLock();
 //        classLoadLoopWait();
-        suspendWait();
+//        suspendWait();
     }
 
     /* 线程循环等待而造成的死锁 */
@@ -24,10 +25,15 @@ public class DeadLockTest {
         Lock lock1=new ReentrantLock();
         Lock lock2=new ReentrantLock();
 
+        CountDownLatch countDownLatch1 = new CountDownLatch(1);
+        CountDownLatch countDownLatch2 = new CountDownLatch(1);
+
         Thread thread1=new Thread(()->{
             lock1.lock();
+            countDownLatch1.countDown();
             try {
-                Thread.sleep(500);
+                // 比起睡眠更具有确定性
+                countDownLatch2.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -38,8 +44,9 @@ public class DeadLockTest {
 
         Thread thread2=new Thread(()->{
             lock2.lock();
+            countDownLatch2.countDown();
             try {
-                Thread.sleep(500);
+                countDownLatch1.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -50,6 +57,7 @@ public class DeadLockTest {
 
         thread1.start();
         thread2.start();
+        System.out.println("done");
     }
 
     static AtomicInteger src=new AtomicInteger(1);
