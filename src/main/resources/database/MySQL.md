@@ -104,11 +104,12 @@ mysql默认的事务隔离级别为RR（Repeatable Read 可重复读），解决
 1. 利用MVCC解决快照读的幻读问题。select * from t where a=1;属于快照读
 2. 利用next-key解决当前读的幻读问题。
    * select * from t where a=1 lock in share mode;属于当前读 
-   * select * from t where a=1 for upda;属于当前读 
+   * select * from t where a=1 for update;属于当前读 
    * insert update delete属于当前读
 ### 幻读的理解
 在隔离级别为可重复读的条件下，幻读表现为：
 1. 事务1和事务2同时 , 事务1读数据 , 事务2插入数据提交 , 事务1插入同样的数据时报错说已经重复了。
+2. ![img.png](img.png) ![img_1.png](img_1.png)
 2. 事务1和事务2同时 , 事务1读数据 , 事务2插入数据提交 , 事务1更新数据却可以把事务2的数据也一块给更了。
 
 解决方式是在select读时候的sql中增加for update 或者lock in share mode, 会把我所查到的数据锁住 , 别的事务根本插不进去 , 这样就解决了,
@@ -418,3 +419,5 @@ C: A D I
 
 同样的150万条记录下的查询时间对比：
 ![joint-index](../images/joint-index.PNG)
+
+https://nxwz51a5wp.feishu.cn/docs/doccn9j1QIJp2f81Ty8Q2JHtEbg
