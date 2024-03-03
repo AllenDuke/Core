@@ -45,7 +45,7 @@ Redis更新
 1）数据操作主要分为两大块：
 一个是全量(将全部数据一次写入到redis)
 一个是增量（实时更新）
-这里说的是增量,指的是mysql的update、insert、delate变更数据。
+这里说的是增量,指的是mysql的update、insert、delete变更数据。
 
 2）读取binlog后分析 ，利用消息队列,推送更新各台的redis缓存数据。
 这样一旦MySQL中产生了新的写入、更新、删除等操作，就可以把binlog相关的消息推送至Redis，Redis再根据binlog中的记录，对Redis进行更新。
@@ -56,4 +56,4 @@ Redis更新
 
 当然，这里的消息推送工具你也可以采用别的第三方：kafka、rabbitMQ等来实现推送更新Redis。
 
-以上就是Redis和MySQL数据一致性详解。
+以上就是Redis和MySQL数据一致性详解，但这些都是只符合最终一致性（CAP中符合AP，最常见），尽可能地一致性。

@@ -196,6 +196,8 @@ InnoDB的MVCC,是通过在每行记录后面保存两个隐藏的列来实现的
 
 mysql做ddl语句(修改表结构)的时候一定要特别小心，select语句会执有表的MDL_SHARED_READ(SR)锁，而DDL语句在opening tables阶段会需要
 MDL_SHARED_NO_WRITE(SNW)锁，在RENAME阶段更会需要MDL_EXCLUSIVE锁（X）,而SR锁与X锁是互斥的。
+
+与crud的锁互斥
 ### MVCC与锁
 在MySQL中，如在RR下，MVCC与锁是共同起作用的。即在当前读的时候会加锁。 而加锁的时候，
 读读共享，读写互斥，写写互斥，参考Java的ReentrantReadWriteLock(写读互斥，而我觉得MVCC就是利用快照使得写的时候可以读)。
@@ -205,6 +207,9 @@ MDL_SHARED_NO_WRITE(SNW)锁，在RENAME阶段更会需要MDL_EXCLUSIVE锁（X）
 2. 在提交读的时候，每一次读都会生成快照，在快照中去判断可见性，可见性的判断参照上面，故而会读取到别人（该事务id<当前事务）
 提交后的数据。
 3. 在可重复读的时候，快照在一次读时生成，之后的读在此快照的基础上读取的自己的修改。
+
+### 两阶段锁
+先加锁，释放锁后不再加锁（事务commit阶段释放）。这样可以最大并发的同时可以保持一致性。
 
 ### 日志
 以下是undo+redo事务的简化过程：
@@ -245,7 +250,8 @@ redo log file on disk中，都是这样以512字节的块存储的。
 主从复制的基础：binlog日志和relaylog日志
 ##### 什么是MySQL主从复制
 简单来说就是保证主SQL（Master）和从SQL（Slave）的数据是一致性的，向Master插入数据后，
-Slave会自动从Master把修改的数据同步过来（有一定的延迟），通过这种方式来保证数据的一致性，就是主从复制
+Slave会自动从Master把修改的数据同步过来（有一定的延迟），通过这种方式来保证数据的一致性，就是主从复制。
+主从同步是在主库完成事务提交之后。
 ##### 复制方式
 MySQL5.6开始主从复制有两种方式：基于日志（binlog）、基于GTID（全局事务标示符）。 本文只涉及基于日志binlog的主从配置
 
