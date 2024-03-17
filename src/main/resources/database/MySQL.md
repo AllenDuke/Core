@@ -431,3 +431,7 @@ C: A D I
 ![joint-index](../images/joint-index.PNG)
 
 https://nxwz51a5wp.feishu.cn/docs/doccn9j1QIJp2f81Ty8Q2JHtEbg
+
+## double-write
+在刷写脏页时，会先将脏页备份写到磁盘double-write空间，用于在崩溃恢复时（可能会发生页半写），结合redo-log（记录的是页的物理变更，如offset+val），
+使得页从一个一致状态到另一个一致状态。
