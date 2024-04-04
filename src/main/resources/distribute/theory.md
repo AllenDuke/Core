@@ -8,6 +8,8 @@ C：一致性，A：可用性，P：分区容错性。
 生时，不再提供修改数据的功能，直到网络状况完全恢复正常再继续对外提供服务。
 
 一句话概括 CAP 原理就是——网络分区发生时，一致性和可用性两难全。
+
+如果，采用AC，即在发生网络分区时，系统可能会将无法通信的节点从服务中剔除，从而牺牲了分区容忍性。（故障检测，用户请求重定向）
 ### redis AP
 Redis 的主从数据是异步同步的，所以分布式的 Redis 系统并不满足「一致性」要求。
 当客户端在 Redis 的主节点修改了数据后，立即返回，即使在主从网络断开的情况下，主节
@@ -17,7 +19,11 @@ Redis 保证「最终一致性」，从节点会努力追赶主节点，最终�
 复，从节点会采用多种策略努力追赶上落后的数据，继续尽力保持和主节点一致。
 ### zookeeper CP
 强调一致性，在集群选举时不可用。
-
+https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#ch_zkGuarantees
+读：会话中顺序一致性（client写入后知道version）、最终一致性（提供sync与leader同步）。
+### etcd CP
+https://zyy.rs/post/etcd-linearizable-read-implementation/
+一致性读由leader完成，读前检查自己是否仍然是leader，防止已出现网络分区。
 ## Base
 Ba：基本可用，s：软状态（中间态），e：最终一致性。
 ## raft
