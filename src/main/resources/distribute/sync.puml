@@ -1,0 +1,19 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+客户端 -> leader: 数据更新请求
+leader -> leader: prepare(cas)
+
+alt prepare成功 is false
+  leader -> 客户端: 更新失败
+else 加锁成功 is true
+  leader -> 多数派: prepare
+  多数派 -> leader: ok
+  leader -> 多数派: commit
+  多数派 -> leader: ok
+  leader -> leader: commit
+  leader -> 客户端: 更新成功
+end
+@enduml
