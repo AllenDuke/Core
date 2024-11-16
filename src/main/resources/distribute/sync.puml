@@ -3,17 +3,16 @@
 
 autonumber
 
-客户端 -> leader: 数据更新请求
-leader -> leader: prepare(cas)
+客户端 -> 主节点: 数据更新请求
+主节点 -> 主节点: 加锁(cas)
 
-alt prepare成功 is false
-  leader -> 客户端: 更新失败
+alt 加锁成功 is false
+  主节点 -> 客户端: 更新失败
 else 加锁成功 is true
-  leader -> 多数派: prepare
-  多数派 -> leader: ok
-  leader -> 多数派: commit
-  多数派 -> leader: ok
-  leader -> leader: commit
-  leader -> 客户端: 更新成功
+  主节点 -> 从节点: 新数据
+  从节点 -> 从节点: 保证不存在半更新状态
+  从节点 -> 主节点: ok
+  主节点 -> 主节点: 等待收到半数或以上后更新自己并解锁，否则无限重试
+  主节点 -> 客户端: 更新成功
 end
 @enduml
