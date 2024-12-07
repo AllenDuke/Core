@@ -2,7 +2,7 @@ package com.github.AllenDuke.dataStructure;
 
 /**
  * @author 杜科
- * @description
+ * @description 布隆过滤器的误报率跟存储容量、插入元素数量、hash函数有关，容量越低、插入元素越多，误报率越高。
  * @contact AllenDuke@163.com
  * @date 2020/7/31
  */
